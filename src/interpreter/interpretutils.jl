@@ -435,7 +435,7 @@ function _call_interpret(@nospecialize(Γ::Env), f, args...)
     end
   end
   if f == :prev && args != (:obj,)
-    Γ.state.histories[args[1]][Γ.state.time - 1], Γ
+    Γ.state.histories[Symbol(args[1])][Γ.state.time - 1], Γ
   elseif islib(f)
     interpret_lib(f, args, Γ)
   elseif isjulialib(f)
@@ -565,9 +565,10 @@ end
 # used for lambda function calls!
 function interpret_call(f, params, @nospecialize(Γ::Env))
   func, Γ = interpret(f, Γ)
+  # @show func, "func"
   func_args = func[1]
   func_body = func[2]
-
+  # @show func_args, "func_args"
   # construct environment
   old_current_var_values = copy(Γ.current_var_values) 
   Γ2 = Γ
@@ -659,9 +660,11 @@ end
 function interpret_on(args, @nospecialize(Γ::Env))
   event = args[1]
   update_ = args[2]
-  Γ2 = Γ
+  Γ2 = deepcopy(Γ)
   if Γ2.state.time != 0
-    e, Γ2 = interpret(event, Γ2) 
+    if !(event isa Symbol)
+    end
+    e, Γ2 = interpret(event, Γ2)
     if e == true
       if Γ2.show_rules != -1
         open("likelihood_output_$(Γ2.show_rules).txt", "a") do io
