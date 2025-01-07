@@ -48,7 +48,7 @@ mutable struct State
   rng::AbstractRNG
   scene::Scene 
   object_types::Dict{Symbol, ObjectType}
-  histories::Dict{Symbol, Dict{Int, Union{Int, Float64, String, Bool, Position, Object, AbstractVector}}}
+  histories::Dict{Symbol, Dict{Int, Union{Int, Float64, String, Bool, Position, Object, AbstractVector, Cell}}}
 end
 
 
@@ -58,7 +58,7 @@ mutable struct Env
   up::Bool 
   down::Bool
   click::Union{Nothing, Click}
-  current_var_values::Dict{Symbol, Union{Object, Int, Float64, Bool, String, Position, State, AbstractVector}}
+  current_var_values::Dict{Symbol, Union{Object, Int, Float64, Bool, String, Position, State, AbstractVector, Cell}}
   lifted::Dict{Symbol, Union{AExpr, BigInt, Int, String}}
   on_clauses::Dict{Symbol, Vector{Union{AExpr, Symbol}}}
   state::State
@@ -114,6 +114,14 @@ function prev(obj::Object, @nospecialize(state))
     prev_objects[1]                            
   else
     obj
+  end
+end
+
+function renderValue(obj::Object, state::Union{State, Nothing}=nothing)
+  if obj.alive
+    [obj]
+  else
+    []
   end
 end
 
