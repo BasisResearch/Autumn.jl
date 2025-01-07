@@ -321,7 +321,7 @@ function libapl(f, args, @nospecialize(Γ::Env))
         interpret_updateObj(args, Γ)
       elseif f == :removeObj 
         interpret_removeObj(args, Γ)
-      else 
+      else
         lib_to_func[f]((interpret(arg, Γ)[1] for arg in args)..., Γ.state), Γ
       end
     end
@@ -672,9 +672,7 @@ function interpret_on(args, @nospecialize(Γ::Env))
           println(io, repr([event isa Symbol ? event : repr(event), repr(update_)]))
         end
       end
-      t = interpret(update_, Γ2)
-      Γ3 = t[2]
-      Γ2 = Γ3
+      _, Γ2 = interpret(update_, Γ2)
     end
   end
   (AExpr(:on, args...), Γ2)

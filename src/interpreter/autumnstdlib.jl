@@ -878,9 +878,12 @@ function closest(object::Object, type::Symbol, @nospecialize(state::State))::Pos
   end
 end
 
-function closest(object::Object, @nospecialize(types::AbstractVector), @nospecialize(state::State))::Position
-  objects_of_type = filter(obj -> (obj.type in types) && (obj.alive), state.scene.objects)
+function closest(object::Object, @nospecialize(objects_of_type::AbstractVector), @nospecialize(state::State))::Position
+  # objects_of_type = filter(obj -> (obj.type in types) && (obj.alive), state.scene.objects)
+  # @show object
+  # @show objects_of_type
   if length(objects_of_type) == 0
+    # println("here!")
     object.origin
   else
     min_distance = min(map(obj -> distance(object, obj), objects_of_type))
