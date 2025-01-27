@@ -312,6 +312,7 @@ function libapl(f, args, @nospecialize(Γ::Env))
     for arg in args 
       if (arg isa AbstractArray) && (length(arg) == 2) && (arg[1] isa AExpr || arg[1] isa Symbol) && (arg[2] isa AExpr || arg[2] isa Symbol)
         has_function_arg = true
+        break
       end
     end
   
@@ -436,7 +437,10 @@ function _call_interpret(@nospecialize(Γ::Env), f, args...)
     end
   end
   if f == :prev && args != (:obj,)
-    Γ.state.histories[Symbol(args[1])][Γ.state.time - 1], Γ
+    obj = Γ.state.histories[Symbol(args[1])][Γ.state.time - 1]
+    (obj, Γ)
+  elseif f == :prev && args == (:obj,)
+    Γ.current_var_values[:obj], Γ
   elseif islib(f)
     interpret_lib(f, args, Γ)
   elseif isjulialib(f)
@@ -493,6 +497,10 @@ function interpret(x, @nospecialize(Γ::Env))
     (x, Γ)
   end
 end 
+
+function interpret(o::Object, @nospecialize(Γ::Env))
+  (o, Γ)
+end
 
 function interpret_list(args, @nospecialize(Γ::Env))
   new_list = Vector{Any}(undef, length(args))
@@ -571,8 +579,8 @@ function interpret_call(f, params, @nospecialize(Γ::Env))
   func_body = func[2]
   # @show func_args, "func_args"
   # construct environment
-  old_current_var_values = copy(Γ.current_var_values) 
-  Γ2 = Γ
+  old_current_var_values = deepcopy(Γ.current_var_values) 
+  Γ2 = deepcopy(Γ)
   if func_args isa AExpr 
     for i in eachindex(func_args.args)
       param_name = func_args.args[i]
@@ -663,6 +671,7 @@ function interpret_on(args, @nospecialize(Γ::Env))
   update_ = args[2]
   Γ2 = deepcopy(Γ)
   if Γ2.state.time != 0
+    # CHECK THIS
     if !(event isa Symbol)
     end
     e, Γ2 = interpret(event, Γ2)
@@ -681,10 +690,9 @@ end
 
 # evaluate updateObj on arguments that include functions 
 function interpret_updateObj(args, @nospecialize(Γ::Env))
-  Γ2 = Γ
+  Γ2 = deepcopy(Γ)
   numFunctionArgs = count(x -> x == true, mappedarray(arg -> (arg isa AbstractArray) && (length(arg) == 2) && (arg[1] isa AExpr || arg[1] isa Symbol) && (arg[2] isa AExpr || arg[2] isa Symbol), args))
   if numFunctionArgs == 1
-    
     list, Γ2 = interpret(args[1], Γ2)
     map_func = args[2]
 
@@ -722,6 +730,7 @@ function interpret_updateObj(args, @nospecialize(Γ::Env))
     new_list = Vector{Any}(undef, length(list))
     for (j, item) in enumerate(list)
       pred, Γ2 = interpret(AExpr(:call, filter_func, item), Γ2)
+
       if pred == true 
         if Γ2.show_rules != -1
           open("likelihood_output_$(Γ2.show_rules).txt", "a") do io
@@ -748,8 +757,8 @@ function interpret_updateObj(args, @nospecialize(Γ::Env))
     # update render
     object_type = Γ.state.object_types[obj.type]
     
-    old_current_var_values = copy(Γ.current_var_values)
-    Γ3 = Γ2
+    old_current_var_values = deepcopy(Γ.current_var_values)
+    Γ3 = deepcopy(Γ2)
     fields = object_type.fields
     for i in eachindex(fields)
       field_name = fields[i].args[1]

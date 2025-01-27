@@ -524,7 +524,9 @@ function adj(@nospecialize(obj1::Object), @nospecialize(obj2::Object), unitSize:
 end
 
 function adj(@nospecialize(obj1::Object), @nospecialize(obj2::AbstractVector), unitSize::Int, @nospecialize(state::State)) 
-  filter(o -> o.id in map(x -> x.id, obj2), adjacentObjs(obj1, unitSize, state)) != []
+  adj_ = adjacentObjs(obj1, unitSize, state)
+  filt = filter(o -> o.id in map(x -> x.id, obj2), adj_)
+  filt != []
 end
 
 function adj(@nospecialize(obj1::AbstractVector), @nospecialize(obj2::AbstractVector), unitSize::Int, @nospecialize(state::State)) 
