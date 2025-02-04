@@ -65,7 +65,7 @@ function start(aex::AExpr, rng=Random.GLOBAL_RNG; show_rules=-1)
   reordered_lines_init = vcat(grid_params_and_object_type_lines, 
                               initnext_lines, 
                               on_clause_lines, 
-                              # lifted_lines
+                              lifted_lines
                             )
 
   # following initialization, we no longer need initnext lines 
@@ -143,9 +143,9 @@ function update_state(env_::Env)
     env_.state.histories[key][env_.state.time] = env_.current_var_values[key]
   
     # delete earlier times stored in history, since we only use prev up to 1 level back
-    if env_.state.time > 0
-      delete!(env_.state.histories, env_.state.time - 1)
-    end
+    # if env_.state.time > 0
+    #   delete!(env_.state.histories, env_.state.time - 1)
+    # end
 
   end
 
