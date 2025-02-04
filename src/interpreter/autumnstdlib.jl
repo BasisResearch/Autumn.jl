@@ -29,11 +29,11 @@ struct Object
   alive::Bool 
   changed::Bool
   custom_fields::Dict{Symbol, Union{Int, String, Bool, Position}}
-  render::Union{Nothing, AbstractVector}
+  render::Union{Nothing, Vector{Cell}}
 end
 
 struct ObjectType
-  render::Union{Nothing, AExpr, AbstractVector}
+  render::Union{Nothing, AExpr, Vector{Cell}}
   fields::Vector{AExpr}
 end
 
@@ -48,7 +48,7 @@ mutable struct State
   rng::AbstractRNG
   scene::Scene 
   object_types::Dict{Symbol, ObjectType}
-  histories::Dict{Symbol, Dict{Int, Union{Int, Float64, String, Bool, Position, Object, AbstractVector, Cell}}}
+  histories::Dict{Symbol, Dict{Int, Any}}
 end
 
 
@@ -58,9 +58,7 @@ mutable struct Env
   up::Bool 
   down::Bool
   click::Union{Nothing, Click}
-  current_var_values::Dict{Symbol, Union{Object, Int, Float64, Bool, String, Position, State, AbstractVector, Cell}}
-  lifted::Dict{Symbol, Union{AExpr, BigInt, Int, String}}
-  on_clauses::Dict{Symbol, Vector{Union{AExpr, Symbol}}}
+  current_var_values::Dict{Symbol, Any}
   state::State
   show_rules::Int
 end
@@ -99,11 +97,14 @@ Cell(position::Position, color::String, @nospecialize(state::State)) = Cell(posi
 
 # struct Scene
 #   objects::Vector{Object}
+#   objects::Vector{Object}
 #   background::String
 # end
 
 # Scene(@nospecialize(objects::AbstractVector)) = Scene(objects, "#ffffff00")
+# Scene(@nospecialize(objects::AbstractVector)) = Scene(objects, "#ffffff00")
 
+# function render(scene)::Vector{Cell}
 # function render(scene)::Vector{Cell}
 #   vcat(map(obj -> render(obj), filter(obj -> obj.alive, scene.objects))...)
 # end
@@ -125,6 +126,7 @@ function renderValue(obj::Object, state::Union{State, Nothing}=nothing)
   end
 end
 
+function render(obj::Object, state::Union{State, Nothing}=nothing)::Vector{Cell}
 function render(obj::Object, state::Union{State, Nothing}=nothing)::Vector{Cell}
   if obj.alive
     if isnothing(obj.render)
@@ -180,6 +182,7 @@ function clicked(click::Union{Click, Nothing}, object::Object, @nospecialize(sta
   else
     GRID_SIZE = state.histories[:GRID_SIZE][0]
     if GRID_SIZE isa AbstractVector 
+    if GRID_SIZE isa AbstractVector 
       GRID_SIZE_X = GRID_SIZE[1]
       nums = map(cell -> GRID_SIZE_X*cell.position.y + cell.position.x, render(object, state))
       (GRID_SIZE_X * click.y + click.x) in nums
@@ -191,6 +194,7 @@ function clicked(click::Union{Click, Nothing}, object::Object, @nospecialize(sta
   end
 end
 
+function clicked(click::Union{Click, Nothing}, @nospecialize(objects::AbstractVector), @nospecialize(state::State))  
 function clicked(click::Union{Click, Nothing}, @nospecialize(objects::AbstractVector), @nospecialize(state::State))  
   # # println("LOOK AT ME")
   # # println(reduce(&, map(obj -> clicked(click, obj), objects)))
@@ -527,6 +531,8 @@ function adj(@nospecialize(obj1::Object), @nospecialize(obj2::AbstractVector), u
   adj_ = adjacentObjs(obj1, unitSize, state)
   filt = filter(o -> o.id in map(x -> x.id, obj2), adj_)
   filt != []
+function adj(@nospecialize(obj1::Object), @nospecialize(obj2::AbstractVector), unitSize::Int, @nospecialize(state::State)) 
+  filter(o -> o.id in map(x -> x.id, obj2), adjacentObjs(obj1, unitSize, state)) != []
 end
 
 function adj(@nospecialize(obj1::AbstractVector), @nospecialize(obj2::AbstractVector), unitSize::Int, @nospecialize(state::State)) 
