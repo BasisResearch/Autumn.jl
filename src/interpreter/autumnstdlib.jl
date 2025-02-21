@@ -847,6 +847,11 @@ function farthestDown(object::Object, @nospecialize(types::AbstractVector), unit
 	end
 end
 
+function aprint(o, state::Union{State, Nothing} = nothing)
+	println("[PRINT] $o")
+	true
+end
+
 function closest(object::Object, type::Symbol, @nospecialize(state::State))::Position
 	objects_of_type = filter(obj -> (obj.type == type) && (obj.alive), state.scene.objects)
 	if length(objects_of_type) == 0

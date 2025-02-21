@@ -50,11 +50,22 @@ end
 
 # primitive function handling 
 const prim_to_func = let prims = (:+, :-, :*, :/, :&, :!, :|, :>, :>=, :<, :<=, :(==), :%, :!=,)
-  NamedTuple{prims}(getproperty.(Ref(Base), prims))
+  try
+    NamedTuple{prims}(getproperty.(Ref(Base), prims))
+  catch e
+    println("[Prim to Func] error - f: ")
+    showerror(stdout, e)
+    rethrow(e)
+  end
 end
 
-isprim(f) = f in keys(prim_to_func)
-
+function isprim(f)
+  try
+    f in keys(prim_to_func)
+  catch e
+    println("[Is Prim] error: $e, f: $f, prim_to_func: $prim_to_func")
+  end
+end 
 function primapl(f, x, @nospecialize(Γ::Env)) 
   prim_to_func[f](x), Γ
 end
@@ -63,7 +74,7 @@ function primapl(f, x1, x2, @nospecialize(Γ::Env))
   prim_to_func[f](x1, x2), Γ
 end
 
-const lib_to_func = let keys = (
+const autumn_keys = [
     :Position,
     :Cell,
     :Click,
@@ -81,7 +92,7 @@ const lib_to_func = let keys = (
     :moveIntersects,
     :pushConfiguration,
     :addObj, 
-    :removeObj, 
+    :removeObj,
     :updateObj,
     :filter_fallback,
     :adjPositions,
@@ -94,8 +105,6 @@ const lib_to_func = let keys = (
     :adjacentObjsDiag,
     :adj,
     :adjCorner,
-    #  :rotate, 
-    #  :rotateNoCollision, 
     :move, 
     :moveLeft, 
     :moveRight, 
@@ -135,9 +144,87 @@ const lib_to_func = let keys = (
     :unfold,
     :range,
     :prev,
-    :firstWithDefault)
-  NamedTuple{keys}(getproperty.(Ref(AutumnStandardLibrary), keys))
-end
+    :firstWithDefault
+]
+
+lib_to_func = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
+lib_to_func[:print] = getproperty.(Ref(AutumnStandardLibrary), :aprint)
+
+# const lib_to_func = let keys = (
+#     :Position,
+#     :Cell,
+#     :Click,
+#     :renderValue,
+#     :render,
+#     :renderScene, 
+#     :occurred,
+#     :uniformChoice, 
+#     :min,
+#     :isWithinBounds, 
+#     :isOutsideBounds,
+#     :clicked, 
+#     :objClicked, 
+#     :intersects, 
+#     :moveIntersects,
+#     :pushConfiguration,
+#     :addObj, 
+#     :removeObj,
+#     :updateObj,
+#     :filter_fallback,
+#     :adjPositions,
+#     :isFree, 
+#     :rect, 
+#     :unitVector, 
+#     :displacement, 
+#     :adjacent, 
+#     :adjacentObjs, 
+#     :adjacentObjsDiag,
+#     :adj,
+#     :adjCorner,
+#     #  :rotate, 
+#     #  :rotateNoCollision, 
+#     :move, 
+#     :moveLeft, 
+#     :moveRight, 
+#     :moveUp, 
+#     :moveDown, 
+#     :moveNoCollision, 
+#     :moveNoCollisionColor, 
+#     :moveLeftNoCollision, 
+#     :moveRightNoCollision, 
+#     :moveDownNoCollision, 
+#     :moveUpNoCollision, 
+#     :moveWrap, 
+#     :moveLeftWrap,
+#     :moveRightWrap, 
+#     :moveUpWrap, 
+#     :moveDownWrap, 
+#     :scalarMult,
+#     :randomPositions, 
+#     :distance,
+#     :closest,
+#     :closestRandom,
+#     :closestLeft,
+#     :closestRight,
+#     :closestUp,
+#     :closestDown, 
+#     :farthestRandom,
+#     :farthestLeft,
+#     :farthestRight,
+#     :farthestUp,
+#     :farthestDown, 
+#     :mapPositions, 
+#     :allPositions, 
+#     :updateOrigin, 
+#     :updateAlive, 
+#     :nextLiquid, 
+#     :nextSolid,
+#     :unfold,
+#     :range,
+#     :prev,
+#     :firstWithDefault)
+#   NamedTuple{keys}(getproperty.(Ref(AutumnStandardLibrary), keys))
+# end
 
 islib(f) = f in keys(lib_to_func)
 
@@ -263,7 +350,14 @@ end
 
 
 function _call_interpret(@nospecialize(Γ::Env), f, args...)
-  if isprim(f)
+  is_prim_f = nothing
+  try
+    is_prim_f = isprim(f)
+  catch e
+    println("[Call Interpret] error: $e, f: $f")
+    rethrow(e)
+  end
+  if is_prim_f
     if length(args) == 1
       arg1 = only(args)
       (new_arg, Γ2) = interpret(arg1, Γ)
@@ -388,26 +482,37 @@ function interpret_field(x, f, @nospecialize(Γ::Env))
 end
 
 function interpret_let(args, @nospecialize(Γ::Env))
-  Γ2 = Γ
+  # Γ2 = Γ
+  # doing deep copy instead of copy to avoid mutation of current_var_values
+  # FIXME: this is a hack; we should be able to do this without deepcopy
+  Γ2 = deepcopy(Γ)
   if length(args) > 0
     for arg in args[1:end-1] # all lines in let except last
-      v2, Γ2 = interpret(arg, Γ2)
-    end
-  
-    if args[end] isa AExpr
-      if args[end].head == :assign # all assignments are global; no return value 
-        v2, Γ2 = interpret(args[end], Γ2)
-        (AExpr(:let, args...), Γ2)
-      else # return value is AExpr   
-        v2, Γ2 = interpret(args[end], Γ2)
-        (v2, Γ)
+      try
+        v2, Γ2 = interpret(arg, Γ2)
+      catch e
+        println("[Let]: Error in interpreting $arg")
+        throw(e)
       end
-    else # return value is not AExpr
-      (interpret(args[end], Γ2)[1], Γ)
     end
+    return interpret(args[end], Γ2)
   else
-    AExpr(:let, args...), Γ2
+    throw(ArgumentError("let must have at least one argument"))
   end
+  #   if args[end] isa AExpr
+  #     if args[end].head == :assign # all assignments are global; no return value 
+  #       v2, Γ2 = interpret(args[end], Γ2)
+  #       (AExpr(:let, args...), Γ2)
+  #     else # return value is AExpr   
+  #       v2, Γ2 = interpret(args[end], Γ2)
+  #       (v2, Γ)
+  #     end
+  #   else # return value is not AExpr
+  #     (interpret(args[end], Γ2)[1], Γ)
+  #   end
+  # else
+  #   AExpr(:let, args...), Γ2
+  # end
 end
 
 # used for lambda function calls!

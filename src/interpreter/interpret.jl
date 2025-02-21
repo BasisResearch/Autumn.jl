@@ -91,7 +91,14 @@ function start(aex::AExpr, rng=Random.GLOBAL_RNG; show_rules=-1)
     var_name = line.args[1]
     # env.lifted[var_name] = line.args[2] 
     if var_name in [:GRID_SIZE, :background]
-      env.current_var_values[var_name] = interpret(line.args[2], env)[1]
+      try
+        env.current_var_values[var_name] = interpret(line.args[2], env)[1]
+      catch e
+        println("Error initializing $var_name, got expression: ")
+        println(line.args[2])
+        showerror(STDOUT, e)
+        rethrow(e)
+      end
     end
   end 
 

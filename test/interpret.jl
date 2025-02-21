@@ -1,10 +1,29 @@
 using Test
 using Autumn
 
+
+function test_print()
+  a = au"""(program
+  (= GRID_SIZE 16)
+  (print "Hello World")
+  )
+  """
+  a
+end
+
+function test_let()
+  a = au"""(program
+  (= GRID_SIZE 16)
+  (let (= x 3) (= y 4) true)
+  )
+  """
+  a
+end
+
 function test_interpret_basic_particles_1()
   a = au"""(program
   (= GRID_SIZE 16)
-  
+
   (object Particle (Cell 0 0 "blue"))
 
   (: particle Particle)
