@@ -5,16 +5,16 @@ using MLStyle
 export AExpr
 
 export istypesymbol,
-       istypevarsymbol,
-       args,
-       arg,
-       wrap,
-       showstring,
-       AutumnError
+	istypevarsymbol,
+	args,
+	arg,
+	wrap,
+	showstring,
+	AutumnError
 
 "Autumn Error"
 struct AutumnError <: Exception
-  msg
+	msg::Any
 end
 AutumnError() = AutumnError("")
 
@@ -42,7 +42,7 @@ primtype    := Int | Bool | Float
 customtype  := A | B | ... | Aa | ...
 
 valueexpr   := fappexpr | lambdaexpr | iteexpr | initnextexpr | letexpr |
-               this | lambdaexpr
+			   this | lambdaexpr
 iteexpr     := if expr then expr else expr
 intextexpr  := init expr next expr
 fappexpr    := valueexpr valueexpr*
@@ -52,10 +52,10 @@ lambdaexpr  := x --> expr
 
 "Autumn Expression"
 struct AExpr
-  head::Symbol
-  args::Vector{Any}
-  AExpr(head::Symbol, @nospecialize args...) = new(head, collect(args))
-  AExpr(head::Symbol, args::Vector{Any}) = new(head, args)
+	head::Symbol
+	args::Vector{Any}
+	AExpr(head::Symbol, @nospecialize args...) = new(head, collect(args))
+	AExpr(head::Symbol, args::Vector{Any}) = new(head, args)
 end
 "Arguements of expression"
 function args end
@@ -100,25 +100,25 @@ isinfix(f) = false
 
 "Pretty print"
 function showstring(aexpr::AExpr)
-  # repr(expr)
-  expr = Expr(aexpr)
-  @match expr begin
-    Expr(:program, statements...) => "(program\n$(join(map(s -> showstring(s), statements), "\n")))"
-    Expr(:typedecl, x, val) => "(: $(x) $(showstring(val)))"
-    Expr(:assign, x, val) => "(= $(x) $(showstring(val)))"
-    Expr(:if, i, t, e) => "(if $(showstring(i)) then $(showstring(t)) else $(showstring(e)))"
-    Expr(:initnext, i, n) => "(initnext $(showstring(i)) $(showstring(n)))"
-    Expr(:call, f, args...) => "($(showstring(f)) $(join(map(a -> showstring(a), args), " ")))"
-    Expr(:let, vars...) => "(let ($(join(map(showstring, vars), " "))))"
-    Expr(:fn, params, body) => "(fn ($(showstring(params))))) $(showstring(body)))"
-    Expr(:list, vals...) => "(list $(join(map(x -> showstring(x), vals), " ")))"
-    Expr(:field, var, field) => "(.. $(showstring(var)) $(showstring(field)))"
-    Expr(:lambda, var, val) => "(--> $(showstring(var)) $(showstring(val)))"
-    Expr(:object, name, args...) => "(object $(showstring(name)) $(join(map(showstring, args), " ")))"
-    Expr(:on, event, upd) => "(on $(showstring(event)) $(showstring(upd)))"
-    Expr(:deriv, x, val) => "(deriv $(showstring(x)) $(showstring(val)))"
-    x                       => "Fail $x"
-  end
+	# repr(expr)
+	expr = Expr(aexpr)
+	@match expr begin
+		Expr(:program, statements...) => "(program\n$(join(map(s -> showstring(s), statements), "\n")))"
+		Expr(:typedecl, x, val) => "(: $(x) $(showstring(val)))"
+		Expr(:assign, x, val) => "(= $(x) $(showstring(val)))"
+		Expr(:if, i, t, e) => "(if $(showstring(i)) then $(showstring(t)) else $(showstring(e)))"
+		Expr(:initnext, i, n) => "(initnext $(showstring(i)) $(showstring(n)))"
+		Expr(:call, f, args...) => "($(showstring(f)) $(join(map(a -> showstring(a), args), " ")))"
+		Expr(:let, vars...) => "(let ($(join(map(showstring, vars), " "))))"
+		Expr(:fn, params, body) => "(fn ($(showstring(params))))) $(showstring(body)))"
+		Expr(:list, vals...) => "(list $(join(map(x -> showstring(x), vals), " ")))"
+		Expr(:field, var, field) => "(.. $(showstring(var)) $(showstring(field)))"
+		Expr(:lambda, var, val) => "(--> $(showstring(var)) $(showstring(val)))"
+		Expr(:object, name, args...) => "(object $(showstring(name)) $(join(map(showstring, args), " ")))"
+		Expr(:on, event, upd) => "(on $(showstring(event)) $(showstring(upd)))"
+		Expr(:deriv, x, val) => "(deriv $(showstring(x)) $(showstring(val)))"
+		x => "Fail $x"
+	end
 end
 
 showstring(lst::Array{}) = "($(join(map(showstring, lst), " ")))"
