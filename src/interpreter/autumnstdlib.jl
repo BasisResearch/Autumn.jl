@@ -847,7 +847,7 @@ function farthestDown(object::Object, @nospecialize(types::AbstractVector), unit
 	end
 end
 
-function aprint(o, state::Union{State, Nothing} = nothing)
+function aprint(o, @nospecialize(state::State))
 	println("[PRINT] $o")
 	true
 end

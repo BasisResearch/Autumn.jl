@@ -50,22 +50,11 @@ end
 
 # primitive function handling 
 const prim_to_func = let prims = (:+, :-, :*, :/, :&, :!, :|, :>, :>=, :<, :<=, :(==), :%, :!=)
-	try
-		NamedTuple{prims}(getproperty.(Ref(Base), prims))
-	catch e
-		println("[Prim to Func] error - f: ")
-		showerror(stdout, e)
-		rethrow(e)
-	end
+	NamedTuple{prims}(getproperty.(Ref(Base), prims))
 end
 
-function isprim(f)
-	try
-		f in keys(prim_to_func)
-	catch e
-		println("[Is Prim] error: $e, f: $f, prim_to_func: $prim_to_func")
-	end
-end
+isprim(f) = f in keys(prim_to_func)
+
 function primapl(f, x, @nospecialize(Γ::Env))
 	prim_to_func[f](x), Γ
 end
@@ -74,81 +63,85 @@ function primapl(f, x1, x2, @nospecialize(Γ::Env))
 	prim_to_func[f](x1, x2), Γ
 end
 
-const autumn_keys = [
-	:Position,
-	:Cell,
-	:Click,
-	:renderValue,
-	:render,
-	:renderScene,
-	:occurred,
-	:uniformChoice,
-	:min,
-	:isWithinBounds,
-	:isOutsideBounds,
-	:clicked,
-	:objClicked,
-	:intersects,
-	:moveIntersects,
-	:pushConfiguration,
-	:addObj,
-	:removeObj,
-	:updateObj,
-	:filter_fallback,
-	:adjPositions,
-	:isFree,
-	:rect,
-	:unitVector,
-	:displacement,
-	:adjacent,
-	:adjacentObjs,
-	:adjacentObjsDiag,
-	:adj,
-	:adjCorner,
-	:move,
-	:moveLeft,
-	:moveRight,
-	:moveUp,
-	:moveDown,
-	:moveNoCollision,
-	:moveNoCollisionColor,
-	:moveLeftNoCollision,
-	:moveRightNoCollision,
-	:moveDownNoCollision,
-	:moveUpNoCollision,
-	:moveWrap,
-	:moveLeftWrap,
-	:moveRightWrap,
-	:moveUpWrap,
-	:moveDownWrap,
-	:scalarMult,
-	:randomPositions,
-	:distance,
-	:closest,
-	:closestRandom,
-	:closestLeft,
-	:closestRight,
-	:closestUp,
-	:closestDown,
-	:farthestRandom,
-	:farthestLeft,
-	:farthestRight,
-	:farthestUp,
-	:farthestDown,
-	:mapPositions,
-	:allPositions,
-	:updateOrigin,
-	:updateAlive,
-	:nextLiquid,
-	:nextSolid,
-	:unfold,
-	:range,
-	:prev,
-	:firstWithDefault,
-]
-
-lib_to_func = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
-lib_to_func[:print] = getproperty.(Ref(AutumnStandardLibrary), :aprint)
+const lib_to_func =
+	let autumn_keys = [
+			:Position,
+			:Cell,
+			:Click,
+			:renderValue,
+			:render,
+			:renderScene,
+			:occurred,
+			:uniformChoice,
+			:min,
+			:isWithinBounds,
+			:isOutsideBounds,
+			:clicked,
+			:objClicked,
+			:intersects,
+			:moveIntersects,
+			:pushConfiguration,
+			:addObj,
+			:removeObj,
+			:updateObj,
+			:filter_fallback,
+			:adjPositions,
+			:isFree,
+			:rect,
+			:unitVector,
+			:displacement,
+			:adjacent,
+			:adjacentObjs,
+			:adjacentObjsDiag,
+			:adj,
+			:adjCorner,
+			:move,
+			:moveLeft,
+			:moveRight,
+			:moveUp,
+			:moveDown,
+			:moveNoCollision,
+			:moveNoCollisionColor,
+			:moveLeftNoCollision,
+			:moveRightNoCollision,
+			:moveDownNoCollision,
+			:moveUpNoCollision,
+			:moveWrap,
+			:moveLeftWrap,
+			:moveRightWrap,
+			:moveUpWrap,
+			:moveDownWrap,
+			:scalarMult,
+			:randomPositions,
+			:distance,
+			:closest,
+			:closestRandom,
+			:closestLeft,
+			:closestRight,
+			:closestUp,
+			:closestDown,
+			:farthestRandom,
+			:farthestLeft,
+			:farthestRight,
+			:farthestUp,
+			:farthestDown,
+			:mapPositions,
+			:allPositions,
+			:updateOrigin,
+			:updateAlive,
+			:nextLiquid,
+			:nextSolid,
+			:unfold,
+			:range,
+			:prev,
+			:firstWithDefault,
+		]
+		begin
+			lib_to_func_ = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
+			lib_to_func_[:print] = getproperty.(Ref(AutumnStandardLibrary), :aprint)
+			NamedTuple(lib_to_func_)
+		end
+	end
 
 # const lib_to_func = let keys = (
 #     :Position,
