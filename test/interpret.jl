@@ -8,7 +8,7 @@ function test_print()
   (print "Hello World")
   )
   """
-  a
+  true
 end
 
 function test_let()
@@ -17,7 +17,7 @@ function test_let()
   (let (= x 3) (= y 4) true)
   )
   """
-  a
+  true
 end
 
 function test_interpret_basic_particles_1()
@@ -96,5 +96,10 @@ end
   test_interpret_basic_particles_1()
   test_interpret_basic_particles_2()
   test_interpret_full_particles()
+end
+
+@testset "parse" begin
+  @test test_let()
+  @test test_print()
 end
 
