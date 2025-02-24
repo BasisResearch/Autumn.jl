@@ -65,11 +65,11 @@
 
 
   (: feathers (List Feather))
-  (= feathers (initnext ((makeChick))(prev feathers)))
+  (= feathers (initnext (makeChick) (prev feathers)))
 
 
   (: eggshells (List Eggshell))
-  (= eggshells (initnext ((makeEgg)) (nextEggshells (prev eggshells) (prev feathers))))
+  (= eggshells (initnext (makeEgg) (nextEggshells (prev eggshells) (prev feathers))))
 
 
   (on (clicked eggshells) (= eggshells (updateObj (prev eggshells) 
@@ -78,11 +78,11 @@
                                                         then (updateObj eggshell "broken" true) 
                                                         else eggshell)))))
                         
-  (= nextEggshells (--> (eggshells feathers) 
-                        (let (= brokenEggshell (filter (--> (es) (.. es broken)) eggshells))
-                             (= brokenEggshell (filter (--> (es) (! (intersects es feathers))) brokenEggshell))
-                             (= unbrokenEggshell (filter (--> (es) (! (.. es broken) )) eggshells))
-                             (= nextBrokenEggShell (map nextLiquid brokenEggshell))
-                             (concat (list nextBrokenEggShell unbrokenEggshell)))))
+  (= nextEggshells (fn (eggshells feathers) 
+                        (let (= brokenEggshell (filter (--> es (.. es broken)) eggshells))
+                             (= brokenEggshell (filter (--> es (! (intersects es feathers))) brokenEggshell))
+                             (= unbrokenEggshell (filter (--> es (! (.. es broken) )) eggshells))
+                             (= nextBrokenEggShell (map (--> es (nextLiquid es)) brokenEggshell))
+                             (vcat (list nextBrokenEggShell unbrokenEggshell)))))
 
 )

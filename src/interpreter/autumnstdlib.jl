@@ -28,7 +28,7 @@ struct Object
 	type::Symbol
 	alive::Bool
 	changed::Bool
-	custom_fields::Dict{Symbol, Union{Int, String, Bool, Position}}
+	custom_fields::Dict{Symbol, Any}
 	render::Union{Nothing, Vector{Cell}}
 end
 
@@ -112,7 +112,7 @@ function renderValue(obj::Object, state::Union{State, Nothing} = nothing)
 end
 
 function renderValue(objs::AbstractVector, state::Union{State, Nothing} = nothing)
-	collect(map(o -> renderValue(o, state), objs))
+	vcat(map(o -> renderValue(o, state), objs)...)
 end
 
 function render(obj::Object, state::Union{State, Nothing} = nothing)::Vector{Cell}
@@ -311,6 +311,45 @@ function intersects(object::Object, @nospecialize(state::State))::Bool
 	intersects(object, objects, state)
 end
 
+# (= intersectsElems (--> (elems1 elems2) (
+#         if (or (== (length elems1) 0) (== (length elems2) 0)) then false else
+#         (any (--> elem1
+#                   (any (--> elem2 (== (.. elem1 position) (.. elem2 position))) elems2)) elems1)
+#         )
+#   ))
+function intersectsElems(@nospecialize(elems1::AbstractVector), @nospecialize(elems2::AbstractVector), @nospecialize(state::State))::Bool
+	if (length(elems1) == 0) || (length(elems2) == 0)
+		false
+	else
+		any(elem1 -> any(elem2 -> ==(elem1.origin, elem2.origin), elems2), elems1)
+	end
+end
+
+#   (= intersectsPosElems (--> (pos elems) 
+#                           (any (--> elem (== (.. elem position) pos)) elems)))
+function intersectsPosElems(@nospecialize(pos::Position), @nospecialize(elems::AbstractVector), @nospecialize(state::State))::Bool
+	any(elem -> ==(elem.origin, pos), elems)
+end
+
+#   (= intersectsPosPoss (--> (pos poss) 
+#                           (any (--> pos2 (== pos pos2)) poss)))
+function intersectsPosPoss(@nospecialize(pos::Position), @nospecialize(poss::AbstractVector), @nospecialize(state::State))::Bool
+	any(pos2 -> ==(pos, pos2), poss)
+end
+
+# (= isFreeRangeExceptObj (--> (start end obj) (
+#     let (= allCheckedPos (map (--> (x) (Position x 0)) (range start end)))
+#         (= prev_elems (renderValue obj))
+#         (= filtered_pos (filter (--> pos (! (intersectsPosElems pos prev_elems))) allCheckedPos))
+#         (! (any (--> pos (! (isFreePos pos))) filtered_pos))
+#   )))
+function isFreeRangeExceptObj(start::Int, end_::Int, obj::Object, @nospecialize(state::State))::Bool
+	allCheckedPos = map(x -> Position(x, 0), start:end_)
+	prev_elems = renderValue(obj, state)
+	filtered_pos = filter(pos -> !intersectsPosElems(pos, prev_elems, state), allCheckedPos)
+	!any(pos -> isFreePos(pos, state), filtered_pos)
+end
+
 function addObj(@nospecialize(list::AbstractVector), obj::Object, state::Union{State, Nothing} = nothing)
 	new_list = vcat(list, obj)
 	new_list
@@ -334,6 +373,7 @@ end
 
 function removeObj(@nospecialize(list::AbstractVector), fn, state::Union{State, Nothing} = nothing)
 	new_list = deepcopy(list)
+	println("removeObj: $(fn)")
 	for x in filter(obj -> fn(obj), new_list)
 		index = findall(o -> o.id == x.id, new_list)[1]
 		new_list[index] = update_nt(x, :alive, false)
@@ -1244,14 +1284,6 @@ end
 
 function round(n::Union{Float64, Int}, state::Union{State, Nothing} = nothing)::Int
 	round(Int, n)
-end
-
-function head(arr::AbstractVector, state::Union{State, Nothing} = nothing)
-	first(arr)
-end
-
-function tail(arr::AbstractVector, state::Union{State, Nothing} = nothing)
-	last(arr, length(arr) - 1)
 end
 
 function defined(obj::Object, state::Union{State, Nothing} = nothing)

@@ -22,7 +22,7 @@
   (on up (= agent (moveUp agent)))
   (on down (= agent (moveDown agent)))
 
-  (on true (= bullets (updateObj bullets (--> obj (moveUp (obj))))))
+  (on true (= bullets (updateObj bullets (--> obj (moveUp obj)))))
   
   (on (& ((clicked)) (> (prev numBullets) 0)) 
       (let (= numBullets (- (prev numBullets) 1)) 
@@ -30,5 +30,5 @@
 
   (on (intersects (prev agent) (prev coins)) 
       (let (= numBullets (+ (prev numBullets) 1)) 
-            (= coins (removeObj coins (--> obj (intersects (obj) (prev agent)))))))
+            (= coins (removeObj coins (--> obj (intersects obj (prev agent)))))))
 )

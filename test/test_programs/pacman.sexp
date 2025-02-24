@@ -134,9 +134,9 @@
 
   ;; 2. Pac-Man hits a ghost => Game Over (or reduce life, etc.)
   (on (& (.. pacman alive) (intersects (prev pacman) (prev ghosts)))
-    (let(
-    (print "GAME OVER! Pac-Man got caught by a ghost.")
-    ;; Optionally remove pacman, or freeze movement, etc.
-    (updateObj pacman "alive" false)
-  )))
+    (let
+      (print "GAME OVER! Pac-Man got caught by a ghost.")
+      ;; Optionally remove pacman, or freeze movement, etc.
+      (updateObj pacman "alive" false)
+  ))
 )

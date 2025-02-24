@@ -11,7 +11,7 @@ function test_program_file(filename)
     # Parse the program
     program = Autumn.parseautumn(program_str)
 
-    n = 10
+    n = 25
     
     # Create random user events for n timesteps
     user_events = []

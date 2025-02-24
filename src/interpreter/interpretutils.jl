@@ -144,10 +144,13 @@ const lib_to_func =
 			:adjacentTwoObjs,
 			:adjacentTwoObjsDiag,
 			:adjacentPossDiag,
-			:head,
-			:tail,
 			:defined,
 			:unitVectorObjPos,
+			:intersectsElems,
+			:intersectsPosElems,
+			:intersectsPosPoss,
+			:isFreeRangeExceptObj,
+			:rotateNoCollision,
 		]
 		begin
 			lib_to_func_ = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
@@ -155,82 +158,6 @@ const lib_to_func =
 			NamedTuple(lib_to_func_)
 		end
 	end
-
-# const lib_to_func = let keys = (
-#     :Position,
-#     :Cell,
-#     :Click,
-#     :renderValue,
-#     :render,
-#     :renderScene, 
-#     :occurred,
-#     :uniformChoice, 
-#     :min,
-#     :isWithinBounds, 
-#     :isOutsideBounds,
-#     :clicked, 
-#     :objClicked, 
-#     :intersects, 
-#     :moveIntersects,
-#     :pushConfiguration,
-#     :addObj, 
-#     :removeObj,
-#     :updateObj,
-#     :filter_fallback,
-#     :adjPositions,
-#     :isFree, 
-#     :rect, 
-#     :unitVector, 
-#     :displacement, 
-#     :adjacent, 
-#     :adjacentObjs, 
-#     :adjacentObjsDiag,
-#     :adj,
-#     :adjCorner,
-#     #  :rotate, 
-#     #  :rotateNoCollision, 
-#     :move, 
-#     :moveLeft, 
-#     :moveRight, 
-#     :moveUp, 
-#     :moveDown, 
-#     :moveNoCollision, 
-#     :moveNoCollisionColor, 
-#     :moveLeftNoCollision, 
-#     :moveRightNoCollision, 
-#     :moveDownNoCollision, 
-#     :moveUpNoCollision, 
-#     :moveWrap, 
-#     :moveLeftWrap,
-#     :moveRightWrap, 
-#     :moveUpWrap, 
-#     :moveDownWrap, 
-#     :scalarMult,
-#     :randomPositions, 
-#     :distance,
-#     :closest,
-#     :closestRandom,
-#     :closestLeft,
-#     :closestRight,
-#     :closestUp,
-#     :closestDown, 
-#     :farthestRandom,
-#     :farthestLeft,
-#     :farthestRight,
-#     :farthestUp,
-#     :farthestDown, 
-#     :mapPositions, 
-#     :allPositions, 
-#     :updateOrigin, 
-#     :updateAlive, 
-#     :nextLiquid, 
-#     :nextSolid,
-#     :unfold,
-#     :range,
-#     :prev,
-#     :firstWithDefault)
-#   NamedTuple{keys}(getproperty.(Ref(AutumnStandardLibrary), keys))
-# end
 
 islib(f) = f in keys(lib_to_func)
 
@@ -278,7 +205,9 @@ const julia_lib_to_func =
 		and = &,
 		or = |,
 		not = !,
-		concat = vcat)
+		concat = vcat,
+		head = first,
+		tail = last)
 isjulialib(f) = f in keys(julia_lib_to_func)
 
 function julialibapl(f, args, @nospecialize(Γ::Env))
@@ -286,7 +215,7 @@ function julialibapl(f, args, @nospecialize(Γ::Env))
 	# @show f 
 	if !(f in [:map, :filter, :vcat])
 		julia_lib_to_func[f](args...), Γ
-	elseif f == :vcat
+	elseif f in [:vcat, :concat]
 		julia_lib_to_func[f](vcat(args...)...), Γ
 	elseif f == :map
 		interpret_julia_map(args, Γ)
@@ -453,6 +382,10 @@ function interpret(x, @nospecialize(Γ::Env))
 	end
 end
 
+function interpret(o::Object, @nospecialize(Γ::Env))
+	o, Γ
+end
+
 function interpret_list(args, @nospecialize(Γ::Env))
 	new_list = Vector{Any}(undef, length(args))
 	for (j, arg) in enumerate(args)
@@ -505,8 +438,8 @@ function interpret_let(args, @nospecialize(Γ::Env))
 	# FIXME: this is a hack; we should be able to do this without deepcopy
 	Γ2 = deepcopy(Γ)
 	if length(args) > 0
-		for arg in args[1:end-1] # all lines in let except last
-			try
+		for arg in first(args, length(args) - 1) # all lines in let except last
+			try 
 				v2, Γ2 = interpret(arg, Γ2)
 			catch e
 				println("[Let]: Error in interpreting $arg")
@@ -551,7 +484,6 @@ function interpret_call(f, params, @nospecialize(Γ::Env))
 		param_val, Γ2 = interpret(params[1], Γ2)
 		Γ2.current_var_values[param_name] = param_val
 	else
-		@show func_args
 		error("Could not interpret args: $(func_args)")
 	end
 	# evaluate func_body in environment 
@@ -592,16 +524,15 @@ function interpret_init_next(var_name, var_val, @nospecialize(Γ::Env))
 	init_func = var_val.args[1]
 	next_func = var_val.args[2]
 
-	Γ2 = Γ
-	if !(var_name in keys(Γ2.current_var_values)) # variable not initialized; use init clause
-		var_val, Γ2 = interpret(init_func, Γ2)
-		Γ2.current_var_values[var_name] = var_val
+	if !(var_name in keys(Γ.current_var_values)) # variable not initialized; use init clause
+		var_val, Γ = interpret(init_func, Γ)
+		Γ.current_var_values[var_name] = var_val
 
 		# construct history variable in state 
-		Γ2.state.histories[Symbol(string(var_name))] = Dict()
+		Γ.state.histories[Symbol(string(var_name))] = Dict()
 
 	end
-	(AExpr(:assign, var_name, var_val), Γ2)
+	(AExpr(:assign, var_name, var_val), Γ)
 end
 
 function interpret_object(args, @nospecialize(Γ::Env))
@@ -799,9 +730,3 @@ function interpret_julia_filter(args, @nospecialize(Γ::Env))
 end
 
 end
-
-# Programs that still don't work:
-# hatch.sexp
-# ice.sexp
-# tetris.sexp
-# snake.sexp

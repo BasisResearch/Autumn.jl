@@ -25,16 +25,16 @@
   (: gravity String)
   (= gravity (initnext "rr" (prev "gravity")))
                                                                     
-  (on (== gravity "ul") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position -1 -2))))))
-  (on (== gravity "uu") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position 0 -2))))))
-  (on (== gravity "ur") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position 1 -2))))))
+  (on (== gravity "ul") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position -1 -2))))))
+  (on (== gravity "uu") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position 0 -2))))))
+  (on (== gravity "ur") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position 1 -2))))))
   
-  (on (== gravity "ru") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position 2 -1))))))
-  (on (== gravity "rr") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position 2 0))))))
-  (on (== gravity "rd") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position 2 1))))))
+  (on (== gravity "ru") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position 2 -1))))))
+  (on (== gravity "rr") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position 2 0))))))
+  (on (== gravity "rd") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position 2 1))))))
   
-  (on (== gravity "dl") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position -1 2))))))
-  (on (== gravity "dd") (= blobs (updateObj (prev blobs) (--> obj (move (obj) (Position 0 2))))))
+  (on (== gravity "dl") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position -1 2))))))
+  (on (== gravity "dd") (= blobs (updateObj (prev blobs) (--> obj (move obj (Position 0 2))))))
   
   
   (on (clicked (filter (--> obj (== (.. obj color) "red")) (prev buttons))) (= gravity "ul"))

@@ -53,7 +53,7 @@
         (= enemies2 (removeObj (prev "enemies2") (--> obj (intersects obj (prev bullets))))))
 )
         
-(on (== (% time 5) 2) (= enemyBullets (addObj enemyBullets (EnemyBullet (uniformChoice (map (--> obj (.. obj origin)) (concat (list (prev "enemies1") (prev "enemies2")))))))))         
+(on (== (% time 5) 2) (= enemyBullets (addObj enemyBullets (EnemyBullet (uniformChoice (map (--> obj (.. obj origin)) (vcat (list (prev "enemies1") (prev "enemies2")))))))))         
 (on (intersects (prev "hero") (prev "enemyBullets")) (= hero (updateObj (prev "hero") "alive" false))
 )
 

@@ -67,7 +67,7 @@ function start(aex::AExpr, rng = Random.GLOBAL_RNG; show_rules = -1)
 
 	reordered_lines_init = vcat(grid_params_and_object_type_lines,
 		initnext_lines,
-		on_clause_lines,
+		# on_clause_lines,
 		lifted_lines,
 	)
 
@@ -132,8 +132,7 @@ function step(aex::AExpr, env::Env, user_events = (click = nothing, left = false
 end
 
 """Helper for single-time-step interpretation"""
-function interpret_program(aex, Γ_::Env)
-	Γ = deepcopy(Γ_)
+function interpret_program(aex, Γ::Env)
 	aex.head == :program || error("Must be a program aex")
 	for line in aex.args
 		v, Γ = interpret(line, Γ)
