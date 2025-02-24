@@ -19,7 +19,7 @@ end
 """Initialize environment with variable values"""
 function start(aex::AExpr, rng = Random.GLOBAL_RNG; show_rules = -1)
 	aex.head == :program || error("Must be a program aex")
-	env = Env(false, false, false, false, nothing, Dict(), State(0, 0, rng, Scene([], "white"), Dict(), Dict()), show_rules)
+	env = Env(false, false, false, false, nothing, Dict(), State(0, 0, rng, Scene([], "white"), Dict(), Dict()), Dict(), show_rules)
 
 	lines = aex.args
 
@@ -30,6 +30,8 @@ function start(aex::AExpr, rng = Random.GLOBAL_RNG; show_rules = -1)
 	lifted_lines = filter(l -> l.head == :assign && (!(l.args[2] isa AExpr) || l.args[2].head != :initnext) && l ∉ function_lines, lines) # GRID_SIZE, background here
 	deriv_lines = filter(l -> l.head == :deriv, lines)
 	on_clause_lines = filter(l -> l.head == :on, lines)
+
+	env.named_functions = Dict(f_line.args[1] => f_line.args[2] for f_line in function_lines)
 
 	default_on_clause_lines = []
 	for line in initnext_lines
@@ -65,13 +67,12 @@ function start(aex::AExpr, rng = Random.GLOBAL_RNG; show_rules = -1)
 
 	reordered_lines_init = vcat(grid_params_and_object_type_lines,
 		initnext_lines,
-		function_lines,
 		on_clause_lines,
 		lifted_lines,
 	)
 
 	# following initialization, we no longer need initnext lines 
-	reordered_lines = vcat(on_clause_lines, function_lines)
+	reordered_lines = on_clause_lines
 
 	# add prev functions and variable history to state for lifted variables 
 	for line in lifted_lines

@@ -147,6 +147,7 @@ const lib_to_func =
 			:head,
 			:tail,
 			:defined,
+			:unitVectorObjPos,
 		]
 		begin
 			lib_to_func_ = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
@@ -276,7 +277,8 @@ const julia_lib_to_func =
 		any = any,
 		and = &,
 		or = |,
-		not = !)
+		not = !,
+		concat = vcat)
 isjulialib(f) = f in keys(julia_lib_to_func)
 
 function julialibapl(f, args, @nospecialize(Γ::Env))
@@ -435,6 +437,8 @@ function interpret(x::Symbol, @nospecialize(Γ::Env))
 		Γ.state, Γ
 	elseif x in keys(Γ.current_var_values)
 		Γ.current_var_values[x], Γ
+	elseif x in keys(Γ.named_functions)
+		vcat(Γ.named_functions[x].args...), Γ
 	else
 		error("Could not interpret $x")
 	end
@@ -447,10 +451,6 @@ function interpret(x, @nospecialize(Γ::Env))
 	else
 		(x, Γ)
 	end
-end
-
-function interpret(o::Object, @nospecialize(Γ::Env))
-	(o, Γ)
 end
 
 function interpret_list(args, @nospecialize(Γ::Env))
@@ -539,7 +539,6 @@ function interpret_call(f, params, @nospecialize(Γ::Env))
 	func_args = func[1]
 	func_body = func[2]
 	# construct environment
-	old_current_var_values = deepcopy(Γ.current_var_values)
 	Γ2 = deepcopy(Γ)
 	if func_args isa AExpr
 		for i in eachindex(func_args.args)
@@ -552,26 +551,25 @@ function interpret_call(f, params, @nospecialize(Γ::Env))
 		param_val, Γ2 = interpret(params[1], Γ2)
 		Γ2.current_var_values[param_name] = param_val
 	else
-		error("Could not interpret $(func_args)")
+		@show func_args
+		error("Could not interpret args: $(func_args)")
 	end
 	# evaluate func_body in environment 
 	v, Γ2 = interpret(func_body, Γ2)
 
 	# return value and original environment, except with state updated 
 	Γ = update(Γ, :state, update(Γ.state, :objectsCreated, Γ2.state.objectsCreated))
-	Γ.current_var_values = old_current_var_values
 	(v, Γ)
 end
 
 function interpret_object_call(f, args, @nospecialize(Γ::Env))
 	new_state = update(Γ.state, :objectsCreated, Γ.state.objectsCreated + 1)
 	Γ = update(Γ, :state, new_state)
-
 	origin, Γ = interpret(args[end], Γ)
+	origin = origin isa AutumnStandardLibrary.Position ? origin : AutumnStandardLibrary.Position(origin.x, origin.y)
 	# object_repr = (origin=origin, type=f, alive=true, changed=false, id=Γ.state.objectsCreated)
 
-	old_current_var_values = copy(Γ.current_var_values)
-	Γ2 = Γ
+	Γ2 = deepcopy(Γ)
 	fields = Γ2.state.object_types[f].fields
 	field_values = Dict()
 	for i in eachindex(fields)
@@ -587,7 +585,6 @@ function interpret_object_call(f, args, @nospecialize(Γ::Env))
 		render = render isa AbstractArray ? render : [render]
 		object_repr = Object(Γ.state.objectsCreated, origin, f, true, false, field_values, render)
 	end
-	Γ.current_var_values = old_current_var_values
 	(object_repr, Γ)
 end
 
@@ -806,9 +803,5 @@ end
 # Programs that still don't work:
 # hatch.sexp
 # ice.sexp
-# magnets.sexp (stdlib)
 # tetris.sexp
-# pacman.sexp (stdlib)
-# snake.sexp (type error)
-
-# Other are because named functions are not being interpreted correctly in julia.
+# snake.sexp

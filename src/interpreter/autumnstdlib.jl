@@ -60,6 +60,7 @@ mutable struct Env
 	click::Union{Nothing, Click}
 	current_var_values::Dict{Symbol, Any}
 	state::State
+	named_functions::Dict{Symbol, AExpr}
 	show_rules::Int
 end
 
@@ -108,6 +109,10 @@ function renderValue(obj::Object, state::Union{State, Nothing} = nothing)
 	else
 		[]
 	end
+end
+
+function renderValue(objs::AbstractVector, state::Union{State, Nothing} = nothing)
+	collect(map(o -> renderValue(o, state), objs))
 end
 
 function render(obj::Object, state::Union{State, Nothing} = nothing)::Vector{Cell}
@@ -474,6 +479,9 @@ end
 #     (deltaPos (.. e1 position) (.. e2 position))
 #   ))
 deltaElem(e1::Cell, e2::Cell, state::Union{State, Nothing} = nothing)::Position = displacement(e1, e2, state)
+deltaElem(e1::Object, e2::Object, state::Union{State, Nothing} = nothing)::Position = displacement(e1.origin, e2.origin, state)
+deltaElem(e1::Object, objs::AbstractVector, state::Union{State, Nothing} = nothing) = collect(map(obj -> deltaElem(e1, obj, state), objs))
+deltaElem(objs1::AbstractVector, e2::Object, state::Union{State, Nothing} = nothing) = collect(map(obj -> deltaElem(obj, e2, state), objs1))
 
 #   (= deltaObj (--> (obj1 obj2)
 #     (deltaPos (.. obj1 origin) (.. obj2 origin))
@@ -486,13 +494,14 @@ deltaObj(obj1::Object, obj2::Object, state::Union{State, Nothing} = nothing)::Po
 #           (== (+ (abs (.. delta x)) (abs (.. delta y))) 1)
 #       )
 #   ))
-adjacentElem(e1::Cell, e2::Cell, state::Union{State, Nothing} = nothing)::Bool = displacement(e1, e2, state) in [Position(0, 1), Position(1, 0), Position(0, -1), Position(-1, 0)]
+
 #   (= adjacentPoss (--> (p1 p2 unitSize) (
 #     let (= delta (deltaPos p1 p2))
 #         (<= (+ (abs (.. delta x)) (abs (.. delta y))) unitSize)
 #     )
 #   ))
 adjacentPoss(p1::Position, p2::Position, unitSize::Int, state::Union{State, Nothing} = nothing)::Bool = displacement(p1, p2, state) in [Position(0, unitSize), Position(unitSize, 0), Position(0, -unitSize), Position(-unitSize, 0)]
+
 
 #   (= adjacentTwoObjs (--> (obj1 obj2 unitSize) (
 #     adjacentPoss (.. obj1 origin) (.. obj2 origin) unitSize
@@ -535,6 +544,9 @@ end
 function adjacentObjs(obj::Object, unitSize::Int, @nospecialize(state::State))
 	filter(o -> adjacent(o.origin, obj.origin, unitSize) && (obj.id != o.id), state.scene.objects)
 end
+
+adjacentElem(e1::Object, e2::Object, unitSize::Int = 1, state::Union{State, Nothing} = nothing)::Bool = adjacent(e1.origin, e2.origin, unitSize, state)
+adjacentElem(objs1::AbstractVector, objs2::AbstractVector, unitSize::Int = 1, state::Union{State, Nothing} = nothing)::Bool = any(obj1 -> any(obj2 -> adjacentElem(obj1, obj2, unitSize, state), objs2), objs1)
 
 function adjacentObjsDiag(obj::Object, @nospecialize(state::State))
 	filter(o -> adjacentDiag(o.origin, obj.origin, 1) && (obj.id != o.id), state.scene.objects)
@@ -1234,22 +1246,31 @@ function round(n::Union{Float64, Int}, state::Union{State, Nothing} = nothing)::
 	round(Int, n)
 end
 
-function head(arr, state::Union{State, Nothing} = nothing)
+function head(arr::AbstractVector, state::Union{State, Nothing} = nothing)
 	first(arr)
 end
 
-function tail(arr, state::Union{State, Nothing} = nothing)
+function tail(arr::AbstractVector, state::Union{State, Nothing} = nothing)
 	last(arr, length(arr) - 1)
 end
 
-function defined(obj::Object, state::State)
-	# the object.alive is true
+function defined(obj::Object, state::Union{State, Nothing} = nothing)
 	obj.alive
-
 end
 
+# (= unitVectorObjPos (--> (obj pos)
+#     (let
+#       (= delta (deltaPos (.. obj origin) pos))
+#       (= sign_x (sign (.. delta x)))
+#       (= sign_y (sign (.. delta y)))
+#       (if (and (== (abs sign_x) 1)
+#                (== (abs sign_y) 1)) then
+#           (Position sign_x 0) else (Position sign_x sign_y)
+#       )
+#     )
+#   ))
 function unitVectorObjPos(obj::Object, pos::Position, state::Union{State, Nothing} = nothing)
-	unitVector(obj.origin, pos, state)
+	unitVector(obj, pos, state)
 end
 
 end
