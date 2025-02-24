@@ -26,7 +26,8 @@ function start(aex::AExpr, rng = Random.GLOBAL_RNG; show_rules = -1)
 	# reorder program lines
 	grid_params_and_object_type_lines = filter(l -> !(l.head in (:assign, :on, :deriv)), lines) # || (l.head == :assign && l.args[1] in [:GRID_SIZE, :background])
 	initnext_lines = filter(l -> l.head == :assign && (l.args[2] isa AExpr && l.args[2].head == :initnext), lines)
-	lifted_lines = filter(l -> l.head == :assign && (!(l.args[2] isa AExpr) || l.args[2].head != :initnext), lines) # GRID_SIZE and background here
+	function_lines = filter(l -> l.head == :assign && l.args[2] isa AExpr && (l.args[2].head == :lambda || l.args[2].head == :fn), lines)
+	lifted_lines = filter(l -> l.head == :assign && (!(l.args[2] isa AExpr) || l.args[2].head != :initnext) && l ∉ function_lines, lines) # GRID_SIZE, background here
 	deriv_lines = filter(l -> l.head == :deriv, lines)
 	on_clause_lines = filter(l -> l.head == :on, lines)
 
@@ -64,12 +65,13 @@ function start(aex::AExpr, rng = Random.GLOBAL_RNG; show_rules = -1)
 
 	reordered_lines_init = vcat(grid_params_and_object_type_lines,
 		initnext_lines,
+		function_lines,
 		on_clause_lines,
 		lifted_lines,
 	)
 
 	# following initialization, we no longer need initnext lines 
-	reordered_lines = on_clause_lines
+	reordered_lines = vcat(on_clause_lines, function_lines)
 
 	# add prev functions and variable history to state for lifted variables 
 	for line in lifted_lines
@@ -129,7 +131,8 @@ function step(aex::AExpr, env::Env, user_events = (click = nothing, left = false
 end
 
 """Helper for single-time-step interpretation"""
-function interpret_program(aex, Γ::Env)
+function interpret_program(aex, Γ_::Env)
+	Γ = deepcopy(Γ_)
 	aex.head == :program || error("Must be a program aex")
 	for line in aex.args
 		v, Γ = interpret(line, Γ)

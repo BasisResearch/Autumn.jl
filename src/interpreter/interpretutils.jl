@@ -87,6 +87,7 @@ const lib_to_func =
 			:filter_fallback,
 			:adjPositions,
 			:isFree,
+			:isFreePos,
 			:rect,
 			:unitVector,
 			:displacement,
@@ -96,6 +97,7 @@ const lib_to_func =
 			:adj,
 			:adjCorner,
 			:move,
+			:movePos,
 			:moveLeft,
 			:moveRight,
 			:moveUp,
@@ -135,6 +137,16 @@ const lib_to_func =
 			:range,
 			:prev,
 			:firstWithDefault,
+			:deltaElem,
+			:deltaObj,
+			:adjacentElem,
+			:adjacentPoss,
+			:adjacentTwoObjs,
+			:adjacentTwoObjsDiag,
+			:adjacentPossDiag,
+			:head,
+			:tail,
+			:defined,
 		]
 		begin
 			lib_to_func_ = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
@@ -260,14 +272,20 @@ const julia_lib_to_func =
 		length = length,
 		sign = sign,
 		vcat = vcat,
-		count = count)
+		count = count,
+		any = any,
+		and = &,
+		or = |,
+		not = !)
 isjulialib(f) = f in keys(julia_lib_to_func)
 
 function julialibapl(f, args, @nospecialize(Γ::Env))
 	# println("JULIALIBAPL")
 	# @show f 
-	if !(f in [:map, :filter])
+	if !(f in [:map, :filter, :vcat])
 		julia_lib_to_func[f](args...), Γ
+	elseif f == :vcat
+		julia_lib_to_func[f](vcat(args...)...), Γ
 	elseif f == :map
 		interpret_julia_map(args, Γ)
 	elseif f == :filter
@@ -343,14 +361,7 @@ end
 
 
 function _call_interpret(@nospecialize(Γ::Env), f, args...)
-	is_prim_f = nothing
-	try
-		is_prim_f = isprim(f)
-	catch e
-		println("[Call Interpret] error: $e, f: $f")
-		rethrow(e)
-	end
-	if is_prim_f
+	if isprim(f)
 		if length(args) == 1
 			arg1 = only(args)
 			(new_arg, Γ2) = interpret(arg1, Γ)
@@ -362,7 +373,9 @@ function _call_interpret(@nospecialize(Γ::Env), f, args...)
 			return primapl(f, new_arg1, new_arg2, Γ2)
 		end
 	end
-	if f == :prev && args != (:obj,)
+	if f == :updateObj
+		interpret_updateObj(args, Γ)
+	elseif f == :prev && args != (:obj,)
 		obj = Γ.state.histories[Symbol(args[1])][Γ.state.time-1]
 		(obj, Γ)
 	elseif f == :prev && args == (:obj,)
@@ -373,6 +386,18 @@ function _call_interpret(@nospecialize(Γ::Env), f, args...)
 		interpret_julia_lib(f, args, Γ)
 	elseif f in keys(Γ.state.object_types)
 		interpret_object_call(f, args, Γ)
+	# Handle special cases for `clicked`, `up`, `down`, `left`, `right`
+	# CHECK THIS
+	elseif f isa AExpr && f.head == :call && f.args[1] == :clicked # Hack to handle `((clicked ))`. CPP version requires `((clicked))` whereas Julia version requires `(clicked)`.
+		interpret_lib(:clicked, (), Γ)
+	elseif f isa AExpr && f.head == :call && f.args[1] == :up
+		interpret(:up, Γ)
+	elseif f isa AExpr && f.head == :call && f.args[1] == :down
+		interpret(:down, Γ)
+	elseif f isa AExpr && f.head == :call && f.args[1] == :left
+		interpret(:left, Γ)
+	elseif f isa AExpr && f.head == :call && f.args[1] == :right
+		interpret(:right, Γ)
 	else
 		interpret_call(f, args, Γ)
 	end
@@ -511,10 +536,8 @@ end
 # used for lambda function calls!
 function interpret_call(f, params, @nospecialize(Γ::Env))
 	func, Γ = interpret(f, Γ)
-	# @show func, "func"
 	func_args = func[1]
 	func_body = func[2]
-	# @show func_args, "func_args"
 	# construct environment
 	old_current_var_values = deepcopy(Γ.current_var_values)
 	Γ2 = deepcopy(Γ)
@@ -650,11 +673,12 @@ end
 # evaluate updateObj on arguments that include functions 
 function interpret_updateObj(args, @nospecialize(Γ::Env))
 	Γ2 = deepcopy(Γ)
-	numFunctionArgs = count(x -> x == true, mappedarray(arg -> (arg isa AbstractArray) && (length(arg) == 2) && (arg[1] isa AExpr || arg[1] isa Symbol) && (arg[2] isa AExpr || arg[2] isa Symbol), args))
+	# numFunctionArgs = count(x -> x == true, mappedarray(arg -> (arg isa AbstractArray) && (length(arg) == 2) && (arg[1] isa AExpr || arg[1] isa Symbol) && (arg[2] isa AExpr || arg[2] isa Symbol) || (arg isa AExpr && (arg.head == :fn || arg.head == :lambda)) || (arg isa Symbol && arg in keys(lib_to_func)), args))
+	numFunctionArgs = length(filter(arg -> (arg isa AExpr && (arg.head == :fn || arg.head == :lambda)) || (arg isa Symbol && arg in keys(lib_to_func)) || (arg isa AbstractArray && length(arg) == 2 && (arg[1] isa AExpr || arg[1] isa Symbol) && (arg[2] isa AExpr || arg[2] isa Symbol)), args))
+
 	if numFunctionArgs == 1
 		list, Γ2 = interpret(args[1], Γ2)
 		map_func = args[2]
-
 		if Γ2.show_rules != -1 && list != []
 			open("likelihood_output_$(Γ2.show_rules).txt", "a") do io
 				println(io, "----- updateObj 3 -----")
@@ -673,7 +697,7 @@ function interpret_updateObj(args, @nospecialize(Γ::Env))
 			new_item, Γ2 = interpret(AExpr(:call, map_func, item), Γ2)
 			new_list[j] = new_item
 		end
-		new_list, Γ2
+		return new_list, Γ2
 	elseif numFunctionArgs == 2
 		list, Γ2 = interpret(args[1], Γ2)
 		map_func = args[2]
@@ -706,11 +730,11 @@ function interpret_updateObj(args, @nospecialize(Γ::Env))
 				new_list[j] = item
 			end
 		end
-		new_list, Γ2
+		return new_list, Γ2
 	elseif numFunctionArgs == 0
-		obj = args[1]
+		obj, Γ2 = interpret(args[1], Γ2)
 		field_string = args[2]
-		new_value = args[3]
+		new_value, Γ2 = interpret(args[3], Γ2)
 		new_obj = update(obj, Symbol(field_string), new_value)
 
 		# update render
@@ -778,3 +802,13 @@ function interpret_julia_filter(args, @nospecialize(Γ::Env))
 end
 
 end
+
+# Programs that still don't work:
+# hatch.sexp
+# ice.sexp
+# magnets.sexp (stdlib)
+# tetris.sexp
+# pacman.sexp (stdlib)
+# snake.sexp (type error)
+
+# Other are because named functions are not being interpreted correctly in julia.

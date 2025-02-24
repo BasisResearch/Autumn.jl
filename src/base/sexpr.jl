@@ -33,8 +33,18 @@ program = \"\"\"(program
 	   )\"\"\"
 
 """
-parseautumn(sexprstring::AbstractString) =
-	parseau(array(SExpressions.Parser.parse(sexprstring)))
+function parseautumn(sexprstring::AbstractString)
+	lines = split(sexprstring, "\n")
+	# remove empty lines and spaces at the beginning and end of each line
+	lines = map(l -> strip(l), lines)
+	lines = filter(l -> l != "", lines)
+	# remove lines that start with ; (comments)
+	lines= filter(l -> !startswith(l, ";;"), lines)
+	# for each line, remove anything after the first ; (comments)
+	lines = map(l -> split(l, ";")[1], lines)
+	sexpr = array(SExpressions.Parser.parse(join(lines, "\n")))
+	parseau(sexpr)
+end
 
 "Parse SExpression into Autumn Expressions"
 function parseau(sexpr::AbstractArray)

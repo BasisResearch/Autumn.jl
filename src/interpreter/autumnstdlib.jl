@@ -386,6 +386,22 @@ function isOutsideBounds(position::Position, @nospecialize(state::State))::Bool
 	!isWithinBounds(position, state)
 end
 
+function isFreePos(position::Position, @nospecialize(state::State))::Bool
+	length(filter(cell -> cell.position.x == position.x && cell.position.y == position.y, renderScene(state.scene, state))) == 0
+end
+
+function isFreePos(click::Union{Click, Nothing}, @nospecialize(state::State))::Bool
+	if isnothing(click)
+		false
+	else
+		isFreePos(Position(click.x, click.y), state)
+	end
+end
+
+function isFreePos(positions::Vector{Position}, @nospecialize(state::State))::Bool
+	foldl(|, map(pos -> isFreePos(pos, state), positions), init = false)
+end
+
 function isFree(position::Position, @nospecialize(state::State))::Bool
 	length(filter(cell -> cell.position.x == position.x && cell.position.y == position.y, renderScene(state.scene, state))) == 0
 end
@@ -394,12 +410,12 @@ function isFree(click::Union{Click, Nothing}, @nospecialize(state::State))::Bool
 	if isnothing(click)
 		false
 	else
-		isFree(Position(click.x, click.y), state)
+		isFreePos(Position(click.x, click.y), state)
 	end
 end
 
 function isFree(positions::Vector{Position}, @nospecialize(state::State))::Bool
-	foldl(|, map(pos -> isFree(pos, state), positions), init = false)
+	foldl(|, map(pos -> isFreePos(pos, state), positions), init = false)
 end
 
 function rect(pos1::Position, pos2::Position, state::Union{State, Nothing} = nothing)
@@ -453,6 +469,48 @@ end
 function displacement(cell1::Cell, cell2::Cell, state::Union{State, Nothing} = nothing)::Position
 	displacement(cell1.position, cell2.position)
 end
+
+# (= deltaElem (--> (e1 e2)
+#     (deltaPos (.. e1 position) (.. e2 position))
+#   ))
+deltaElem(e1::Cell, e2::Cell, state::Union{State, Nothing} = nothing)::Position = displacement(e1, e2, state)
+
+#   (= deltaObj (--> (obj1 obj2)
+#     (deltaPos (.. obj1 origin) (.. obj2 origin))
+#   ))
+deltaObj(obj1::Object, obj2::Object, state::Union{State, Nothing} = nothing)::Position = displacement(obj1.origin, obj2.origin, state)
+
+
+#   (= adjacentElem (--> (e1 e2) (
+#       let (= delta (deltaPos (.. e1 position) (.. e2 position)))
+#           (== (+ (abs (.. delta x)) (abs (.. delta y))) 1)
+#       )
+#   ))
+adjacentElem(e1::Cell, e2::Cell, state::Union{State, Nothing} = nothing)::Bool = displacement(e1, e2, state) in [Position(0, 1), Position(1, 0), Position(0, -1), Position(-1, 0)]
+#   (= adjacentPoss (--> (p1 p2 unitSize) (
+#     let (= delta (deltaPos p1 p2))
+#         (<= (+ (abs (.. delta x)) (abs (.. delta y))) unitSize)
+#     )
+#   ))
+adjacentPoss(p1::Position, p2::Position, unitSize::Int, state::Union{State, Nothing} = nothing)::Bool = displacement(p1, p2, state) in [Position(0, unitSize), Position(unitSize, 0), Position(0, -unitSize), Position(-unitSize, 0)]
+
+#   (= adjacentTwoObjs (--> (obj1 obj2 unitSize) (
+#     adjacentPoss (.. obj1 origin) (.. obj2 origin) unitSize
+#   )))
+adjacentTwoObjs(obj1::Object, obj2::Object, unitSize::Int, state::Union{State, Nothing} = nothing)::Bool = adjacentPoss(obj1.origin, obj2.origin, unitSize, state)
+
+#   (= adjacentPossDiag (--> (p1 p2) (
+#     let (= delta (deltaPos p1 p2))
+#         (& (<= (abs (.. delta x)) 1)
+#            (<= (abs (.. delta y)) 1))
+
+#   )))
+adjacentPossDiag(p1::Position, p2::Position, state::Union{State, Nothing} = nothing)::Bool = displacement(p1, p2, state) in [Position(1, 1), Position(1, -1), Position(-1, 1), Position(-1, -1)]
+
+#   (= adjacentTwoObjsDiag (--> (obj1 obj2) (
+#     adjacentPossDiag (.. obj1 origin) (.. obj2 origin)
+#   )))
+adjacentTwoObjsDiag(obj1::Object, obj2::Object, state::Union{State, Nothing} = nothing)::Bool = adjacentPossDiag(obj1.origin, obj2.origin, state)
 
 function adjacent(position1::Position, position2::Position, state::Union{State, Nothing} = nothing)::Bool
 	displacement(position1, position2) in [Position(0, 1), Position(1, 0), Position(0, -1), Position(-1, 0)]
@@ -531,21 +589,25 @@ function rotateNoCollision(object::Object, @nospecialize(state::State))::Object
 	(isWithinBounds(rotate(object), state) && isFree(rotate(object), object, state)) ? rotate(object) : object
 end
 
-function move(position1::Position, position2::Position, state::Union{State, Nothing} = nothing)
+function movePos(position1::Position, position2::Position, state::Union{State, Nothing} = nothing)
 	Position(position1.x + position2.x, position1.y + position2.y)
 end
 
-function move(position::Position, cell::Cell, state::Union{State, Nothing} = nothing)
+function move(position::Position, position2::Position, state::Union{State, Nothing} = nothing)
+	movePos(position, position2, state)
+end
+
+function movePos(position::Position, cell::Cell, state::Union{State, Nothing} = nothing)
 	Position(position.x + cell.position.x, position.y + cell.position.y)
 end
 
-function move(cell::Cell, position::Position, state::Union{State, Nothing} = nothing)
+function movePos(cell::Cell, position::Position, state::Union{State, Nothing} = nothing)
 	Position(position.x + cell.position.x, position.y + cell.position.y)
 end
 
 function move(object::Object, position::Position, state::Union{State, Nothing} = nothing)
 	new_object = deepcopy(object)
-	new_object = update_nt(new_object, :origin, move(object.origin, position))
+	new_object = update_nt(new_object, :origin, movePos(object.origin, position))
 	new_object
 end
 
@@ -1172,4 +1234,23 @@ function round(n::Union{Float64, Int}, state::Union{State, Nothing} = nothing)::
 	round(Int, n)
 end
 
+function head(arr, state::Union{State, Nothing} = nothing)
+	first(arr)
 end
+
+function tail(arr, state::Union{State, Nothing} = nothing)
+	last(arr, length(arr) - 1)
+end
+
+function defined(obj::Object, state::State)
+	# the object.alive is true
+	obj.alive
+
+end
+
+function unitVectorObjPos(obj::Object, pos::Position, state::Union{State, Nothing} = nothing)
+	unitVector(obj.origin, pos, state)
+end
+
+end
+
