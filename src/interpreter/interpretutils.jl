@@ -213,7 +213,7 @@ isjulialib(f) = f in keys(julia_lib_to_func)
 function julialibapl(f, args, @nospecialize(Γ::Env))
 	# println("JULIALIBAPL")
 	# @show f 
-	if !(f in [:map, :filter, :vcat])
+	if !(f in [:map, :filter, :vcat, :concat, :any, :all])
 		julia_lib_to_func[f](args...), Γ
 	elseif f in [:vcat, :concat]
 		julia_lib_to_func[f](vcat(args...)...), Γ
@@ -221,6 +221,8 @@ function julialibapl(f, args, @nospecialize(Γ::Env))
 		interpret_julia_map(args, Γ)
 	elseif f == :filter
 		interpret_julia_filter(args, Γ)
+	elseif f == :any
+		interpret_julia_any(args, Γ)
 	end
 end
 
@@ -727,6 +729,23 @@ function interpret_julia_filter(args, @nospecialize(Γ::Env))
 		end
 	end
 	new_list, Γ
+end
+
+function interpret_julia_any(args, @nospecialize(Γ::Env))
+	# If there are two arguments, use the first as a predicate on the second argument
+	if length(args) == 2
+		p = args[1]
+		list, Γ = interpret(args[2], Γ)
+		new_list = []
+		for item in list
+			v, Γ = interpret(AExpr(:call, p, item), Γ)
+			push!(new_list, v)
+		end
+		return any(new_list), Γ
+	elseif length(args) == 1
+		list, Γ = interpret(args[1], Γ)
+		return all(list), Γ
+	end
 end
 
 end

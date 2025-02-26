@@ -9,10 +9,10 @@
                         1)))))
 (: activeParticle Particle)
 (= activeParticle (initnext (Particle false (Position 2 2)) (prev activeParticle)))
-(on (any (filter (--> obj (! (.. obj health))) (adjacentObjs activeParticle 1))) (= activeParticle (updateObj activeParticle "health" false)))
+(on (any (--> obj (! (.. obj health))) (adjacentObjs activeParticle 1)) (= activeParticle (updateObj activeParticle "health" false)))
 (on (clicked (prev inactiveParticles)) (let 
         (= inactiveParticles (addObj (filter (--> obj (! (clicked obj))) (prev inactiveParticles)) activeParticle))
-        (= activeParticle (head (objClicked (prev inactiveParticles))))
+        (= activeParticle (objClicked (head (prev inactiveParticles))))
         true
         ))
 (on left (= activeParticle (move (prev activeParticle) (Position -1 0))))
