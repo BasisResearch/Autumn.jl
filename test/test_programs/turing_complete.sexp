@@ -108,14 +108,8 @@
             (LED false (Position 11 20))
             (LED (.. xorGate powered) (Position 11 20))))
 
-   (on ((clicked)) (if (intersectsPosPoss (Position (.. click x) (.. click y)) 
-                                           (list (Position 3 5)))
-                          then (Switch (! (.. (prev switch1) state_)) (Position 3 5))
-                          else (prev switch1)))
+  (on (clicked switch1) (= switch1 (updateObj switch1 "state_" (! (.. (prev switch1) state_)))))
 
-    (on ((clicked)) (if (intersectsPosPoss (Position (.. click x) (.. click y)) 
-                                           (list (Position 3 10)))
-                          then (Switch (! (.. (prev switch2) state_)) (Position 3 10))
-                          else (prev switch2)))
+  (on (clicked switch2) (= switch2 (updateObj switch2 "state_" (! (.. (prev switch2) state_)))))
   
 )
