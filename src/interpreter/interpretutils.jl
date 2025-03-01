@@ -323,13 +323,13 @@ function _call_interpret(@nospecialize(Γ::Env), f, args...)
 	# CHECK THIS
 	elseif f isa AExpr && f.head == :call && f.args[1] == :clicked # Hack to handle `((clicked ))`. CPP version requires `((clicked))` whereas Julia version requires `(clicked)`.
 		interpret_lib(:clicked, (), Γ)
-	elseif f isa AExpr && f.head == :call && f.args[1] == :up
+	elseif (f isa Symbol && f == :up) || (f isa AExpr && f.head == :call && f.args[1] == :up)
 		interpret(:up, Γ)
-	elseif f isa AExpr && f.head == :call && f.args[1] == :down
+	elseif (f isa Symbol && f == :down) || (f isa AExpr && f.head == :call && f.args[1] == :down)
 		interpret(:down, Γ)
-	elseif f isa AExpr && f.head == :call && f.args[1] == :left
+	elseif (f isa Symbol && f == :left) || (f isa AExpr && f.head == :call && f.args[1] == :left)
 		interpret(:left, Γ)
-	elseif f isa AExpr && f.head == :call && f.args[1] == :right
+	elseif (f isa Symbol && f == :right) || (f isa AExpr && f.head == :call && f.args[1] == :right)
 		interpret(:right, Γ)
 	else
 		interpret_call(f, args, Γ)
@@ -540,6 +540,7 @@ end
 function interpret_object(args, @nospecialize(Γ::Env))
 	object_name = args[1]
 	object_fields = args[2:end-1]
+	# @show object_fields
 	object_render = args[end]
 
 	# construct object creation function

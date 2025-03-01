@@ -328,13 +328,13 @@ end
 #   (= intersectsPosElems (--> (pos elems) 
 #                           (any (--> elem (== (.. elem position) pos)) elems)))
 function intersectsPosElems(@nospecialize(pos::Position), @nospecialize(elems::AbstractVector), @nospecialize(state::State))::Bool
-	any(elem -> ==(elem.origin, pos), elems)
+	any(elem -> (elem.origin.x == pos.x) && (elem.origin.y == pos.y), elems)
 end
 
 #   (= intersectsPosPoss (--> (pos poss) 
 #                           (any (--> pos2 (== pos pos2)) poss)))
 function intersectsPosPoss(@nospecialize(pos::Position), @nospecialize(poss::AbstractVector), @nospecialize(state::State))::Bool
-	any(pos2 -> ==(pos, pos2), poss)
+	any(pos2 -> (pos.x == pos2.x) && (pos.y == pos2.y), poss)
 end
 
 # (= isFreeRangeExceptObj (--> (start end obj) (
