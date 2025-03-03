@@ -1,8 +1,7 @@
 (program (= GRID_SIZE 24)
   
-  (object Robot (: color String) (: active Bool) (: dir String) (Cell 0 0 color))
+  (object Robot (: color String) (: active Bool) (: dir String) (: moving Bool) (Cell 0 0 color))
   (object Wall (Cell 0 0 "grey"))
-  (object Target (: color String) (Cell 0 0 color))
   (object Border (map (--> (pos) (Cell (.. pos x) (.. pos y) "grey")) 
                   (vcat (list 
                   (rect (Position 0 0) (Position GRID_SIZE 1)) 
@@ -18,30 +17,17 @@
                         else (rect (Position 0 0) (Position 1 length)))))
            
   (: robot1 Robot) 
-  (= robot1 (Robot "red" true "none" (Position 5 5))) ; robot1 is active at first
+  (= robot1 (Robot "red" true "none" false (Position 5 5))) ; robot1 is active at first
   
   (: robot2 Robot) 
-  (= robot2 (Robot "blue" false "none" (Position 18 7)))
+  (= robot2 (Robot "blue" false "none" false (Position 18 7)))
   
   (: robot3 Robot) 
-  (= robot3 (Robot "green" false "none" (Position 8 17)))
+  (= robot3 (Robot "green" false "none" false (Position 8 17)))
   
   (: robot4 Robot) 
-  (= robot4 (Robot "yellow" false "none" (Position 15 15)))
-  
-  ; Targets for each robot (optional)
-  (: redTarget Target)
-  (= redTarget (Target "lightcoral" (Position 20 3)))
-  
-  (: blueTarget Target)
-  (= blueTarget (Target "lightblue" (Position 6 20)))
-  
-  (: greenTarget Target)
-  (= greenTarget (Target "lightgreen" (Position 12 10)))
-  
-  (: yellowTarget Target)
-  (= yellowTarget (Target "lightyellow" (Position 3 12)))
-  
+  (= robot4 (Robot "yellow" false "none" false (Position 15 15)))
+
   ; Border walls
   (: borders Border) 
   (= borders (initnext 
@@ -74,17 +60,8 @@
   (= innerWall8 (InnerWall "vertical" 6 (Position 20 9)))
   
   ; Center walls forming a 2x2 square in the middle
-  (: centerWall1 Wall)
-  (= centerWall1 (Wall (Position 11 11)))
-  
-  (: centerWall2 Wall)
-  (= centerWall2 (Wall (Position 12 11)))
-  
-  (: centerWall3 Wall)
-  (= centerWall3 (Wall (Position 11 12)))
-  
-  (: centerWall4 Wall)
-  (= centerWall4 (Wall (Position 12 12)))
+  (: centerWall (List Wall))
+  (= centerWall1 (list (Wall (Position 11 11)) (Wall (Position 12 11)) (Wall (Position 11 12)) (Wall (Position 12 12)) ))
   
   ; Quadrant divider walls
   (: quadWall1 InnerWall)
@@ -136,172 +113,188 @@
       true
       ))
   
-  ; Direction setting with arrow keys
-  (on (& (left) (.. robot1 active)) (= robot1 (updateObj robot1 "dir" "left")))
-  (on (& (left) (.. robot2 active)) (= robot2 (updateObj robot2 "dir" "left")))
-  (on (& (left) (.. robot3 active)) (= robot3 (updateObj robot3 "dir" "left")))
-  (on (& (left) (.. robot4 active)) (= robot4 (updateObj robot4 "dir" "left")))
-
-  (on (& (right) (.. robot1 active)) (= robot1 (updateObj robot1 "dir" "right")))
-  (on (& (right) (.. robot2 active)) (= robot2 (updateObj robot2 "dir" "right")))
-  (on (& (right) (.. robot3 active)) (= robot3 (updateObj robot3 "dir" "right")))
-  (on (& (right) (.. robot4 active)) (= robot4 (updateObj robot4 "dir" "right")))
-
-  (on (& (up) (.. robot1 active)) (= robot1 (updateObj robot1 "dir" "up")))
-  (on (& (up) (.. robot2 active)) (= robot2 (updateObj robot2 "dir" "up")))
-  (on (& (up) (.. robot3 active)) (= robot3 (updateObj robot3 "dir" "up")))
-  (on (& (up) (.. robot4 active)) (= robot4 (updateObj robot4 "dir" "up")))
-
-  (on (& (down) (.. robot1 active)) (= robot1 (updateObj robot1 "dir" "down")))
-  (on (& (down) (.. robot2 active)) (= robot2 (updateObj robot2 "dir" "down")))
-  (on (& (down) (.. robot3 active)) (= robot3 (updateObj robot3 "dir" "down")))
-  (on (& (down) (.. robot4 active)) (= robot4 (updateObj robot4 "dir" "down")))
-
+  ; Direction setting with arrow keys - only allow when robot is not moving
+  (on (& (left) (& (.. robot1 active) (! (.. robot1 moving)))) (= robot1 (updateObj robot1 "dir" "left")))
+  (on (& (left) (& (.. robot2 active) (! (.. robot2 moving)))) (= robot2 (updateObj robot2 "dir" "left")))
+  (on (& (left) (& (.. robot3 active) (! (.. robot3 moving)))) (= robot3 (updateObj robot3 "dir" "left")))
+  (on (& (left) (& (.. robot4 active) (! (.. robot4 moving)))) (= robot4 (updateObj robot4 "dir" "left")))
+  
+  (on (& (right) (& (.. robot1 active) (! (.. robot1 moving)))) (= robot1 (updateObj robot1 "dir" "right")))
+  (on (& (right) (& (.. robot2 active) (! (.. robot2 moving)))) (= robot2 (updateObj robot2 "dir" "right")))
+  (on (& (right) (& (.. robot3 active) (! (.. robot3 moving)))) (= robot3 (updateObj robot3 "dir" "right")))
+  (on (& (right) (& (.. robot4 active) (! (.. robot4 moving)))) (= robot4 (updateObj robot4 "dir" "right")))
+  
+  (on (& (up) (& (.. robot1 active) (! (.. robot1 moving)))) (= robot1 (updateObj robot1 "dir" "up")))
+  (on (& (up) (& (.. robot2 active) (! (.. robot2 moving)))) (= robot2 (updateObj robot2 "dir" "up")))
+  (on (& (up) (& (.. robot3 active) (! (.. robot3 moving)))) (= robot3 (updateObj robot3 "dir" "up")))
+  (on (& (up) (& (.. robot4 active) (! (.. robot4 moving)))) (= robot4 (updateObj robot4 "dir" "up")))
+  
+  (on (& (down) (& (.. robot1 active) (! (.. robot1 moving)))) (= robot1 (updateObj robot1 "dir" "down")))
+  (on (& (down) (& (.. robot2 active) (! (.. robot2 moving)))) (= robot2 (updateObj robot2 "dir" "down")))
+  (on (& (down) (& (.. robot3 active) (! (.. robot3 moving)))) (= robot3 (updateObj robot3 "dir" "down")))
+  (on (& (down) (& (.. robot4 active) (! (.. robot4 moving)))) (= robot4 (updateObj robot4 "dir" "down")))
+  
   ; Enhanced movement handlers for continuous movement until collision
   (on (== (.. robot1 dir) "left") 
       (let
+        (= robot1 (updateObj robot1 "moving" true))
         (= moved (moveLeftNoCollision robot1))
         (= stopped (== moved robot1))
         (if stopped
-          then (= robot1 (updateObj robot1 "dir" "none"))
+          then (= robot1 (updateObj (updateObj robot1 "dir" "none") "moving" false))
           else (= robot1 moved))
         true))
   
   (on (== (.. robot1 dir) "right") 
       (let
+        (= robot1 (updateObj robot1 "moving" true))
         (= moved (moveRightNoCollision robot1))
         (= stopped (== moved robot1))
         (if stopped
-          then (= robot1 (updateObj robot1 "dir" "none"))
+          then (= robot1 (updateObj (updateObj robot1 "dir" "none") "moving" false))
           else (= robot1 moved))
         true))
   
   (on (== (.. robot1 dir) "up") 
       (let
+        (= robot1 (updateObj robot1 "moving" true))
         (= moved (moveUpNoCollision robot1))
         (= stopped (== moved robot1))
         (if stopped
-          then (= robot1 (updateObj robot1 "dir" "none"))
+          then (= robot1 (updateObj (updateObj robot1 "dir" "none") "moving" false))
           else (= robot1 moved))
         true))
   
   (on (== (.. robot1 dir) "down") 
       (let
+        (= robot1 (updateObj robot1 "moving" true))
         (= moved (moveDownNoCollision robot1))
         (= stopped (== moved robot1))
         (if stopped
-          then (= robot1 (updateObj robot1 "dir" "none"))
+          then (= robot1 (updateObj (updateObj robot1 "dir" "none") "moving" false))
           else (= robot1 moved))
         true))
   
   ; Movement handlers for robot2
   (on (== (.. robot2 dir) "left") 
       (let
+        (= robot2 (updateObj robot2 "moving" true))
         (= moved (moveLeftNoCollision robot2))
         (= stopped (== moved robot2))
         (if stopped
-          then (= robot2 (updateObj robot2 "dir" "none"))
+          then (= robot2 (updateObj (updateObj robot2 "dir" "none") "moving" false))
           else (= robot2 moved))
         true))
   
   (on (== (.. robot2 dir) "right") 
       (let
+        (= robot2 (updateObj robot2 "moving" true))
         (= moved (moveRightNoCollision robot2))
         (= stopped (== moved robot2))
         (if stopped
-          then (= robot2 (updateObj robot2 "dir" "none"))
+          then (= robot2 (updateObj (updateObj robot2 "dir" "none") "moving" false))
           else (= robot2 moved))
         true))
   
   (on (== (.. robot2 dir) "up") 
       (let
+        (= robot2 (updateObj robot2 "moving" true))
         (= moved (moveUpNoCollision robot2))
         (= stopped (== moved robot2))
         (if stopped
-          then (= robot2 (updateObj robot2 "dir" "none"))
+          then (= robot2 (updateObj (updateObj robot2 "dir" "none") "moving" false))
           else (= robot2 moved))
         true))
   
   (on (== (.. robot2 dir) "down") 
       (let
+        (= robot2 (updateObj robot2 "moving" true))
         (= moved (moveDownNoCollision robot2))
         (= stopped (== moved robot2))
         (if stopped
-          then (= robot2 (updateObj robot2 "dir" "none"))
+          then (= robot2 (updateObj (updateObj robot2 "dir" "none") "moving" false))
           else (= robot2 moved))
         true))
   
   ; Movement handlers for robot3
   (on (== (.. robot3 dir) "left") 
       (let
+        (= robot3 (updateObj robot3 "moving" true))
         (= moved (moveLeftNoCollision robot3))
         (= stopped (== moved robot3))
         (if stopped
-          then (= robot3 (updateObj robot3 "dir" "none"))
+          then (= robot3 (updateObj (updateObj robot3 "dir" "none") "moving" false))
           else (= robot3 moved))
         true))
   
   (on (== (.. robot3 dir) "right") 
       (let
+        (= robot3 (updateObj robot3 "moving" true))
         (= moved (moveRightNoCollision robot3))
         (= stopped (== moved robot3))
         (if stopped
-          then (= robot3 (updateObj robot3 "dir" "none"))
+          then (= robot3 (updateObj (updateObj robot3 "dir" "none") "moving" false))
           else (= robot3 moved))
         true))
   
   (on (== (.. robot3 dir) "up") 
       (let
+        (= robot3 (updateObj robot3 "moving" true))
         (= moved (moveUpNoCollision robot3))
         (= stopped (== moved robot3))
         (if stopped
-          then (= robot3 (updateObj robot3 "dir" "none"))
+          then (= robot3 (updateObj (updateObj robot3 "dir" "none") "moving" false))
           else (= robot3 moved))
         true))
   
   (on (== (.. robot3 dir) "down") 
       (let
+        (= robot3 (updateObj robot3 "moving" true))
         (= moved (moveDownNoCollision robot3))
         (= stopped (== moved robot3))
         (if stopped
-          then (= robot3 (updateObj robot3 "dir" "none"))
+          then (= robot3 (updateObj (updateObj robot3 "dir" "none") "moving" false))
           else (= robot3 moved))
         true))
   
   ; Movement handlers for robot4
   (on (== (.. robot4 dir) "left") 
       (let
+        (= robot4 (updateObj robot4 "moving" true))
         (= moved (moveLeftNoCollision robot4))
         (= stopped (== moved robot4))
         (if stopped
-          then (= robot4 (updateObj robot4 "dir" "none"))
+          then (= robot4 (updateObj (updateObj robot4 "dir" "none") "moving" false))
           else (= robot4 moved))
         true))
   
   (on (== (.. robot4 dir) "right") 
       (let
+        (= robot4 (updateObj robot4 "moving" true))
         (= moved (moveRightNoCollision robot4))
         (= stopped (== moved robot4))
         (if stopped
-          then (= robot4 (updateObj robot4 "dir" "none"))
+          then (= robot4 (updateObj (updateObj robot4 "dir" "none") "moving" false))
           else (= robot4 moved))
         true))
   
   (on (== (.. robot4 dir) "up") 
       (let
+        (= robot4 (updateObj robot4 "moving" true))
         (= moved (moveUpNoCollision robot4))
         (= stopped (== moved robot4))
         (if stopped
-          then (= robot4 (updateObj robot4 "dir" "none"))
+          then (= robot4 (updateObj (updateObj robot4 "dir" "none") "moving" false))
           else (= robot4 moved))
         true))
   
   (on (== (.. robot4 dir) "down") 
       (let
+        (= robot4 (updateObj robot4 "moving" true))
         (= moved (moveDownNoCollision robot4))
         (= stopped (== moved robot4))
         (if stopped
-          then (= robot4 (updateObj robot4 "dir" "none"))
+          then (= robot4 (updateObj (updateObj robot4 "dir" "none") "moving" false))
           else (= robot4 moved))
         true))
 )

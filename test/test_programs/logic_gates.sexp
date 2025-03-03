@@ -1,6 +1,5 @@
 (program 
 (= GRID_SIZE 24)
-;; Doesn't work!!!
   
   ; Define enhanced objects
   (object Switch (: state_ Bool) (list 
@@ -18,43 +17,11 @@
   ; Wire object - just a single cell
   (object Wire (: powered Bool) (Cell 0 0 (if powered then "yellow" else "grey")))
   
-  ; Button object for UI controls
-  (object Button (: color String) (Cell 0 0 color))
-  
   ; Logic functions
   (= evaluateAND (--> (a b) (& a b))) 
   (= evaluateOR (--> (a b) (| a b))) 
   (= evaluateNOT (--> (a) (! a))) 
   (= evaluateXOR (--> (a b) (| (& a (! b)) (& (! a) b))))
-  
-  ; Create UI buttons
-  (: wireButton Button)
-  (= wireButton (initnext (Button "grey" (Position 1 1)) (prev wireButton)))
-  
-  (: switchButton Button)
-  (= switchButton (initnext (Button "darkgrey" (Position 3 1)) (prev switchButton)))
-  
-  (: outputButton Button)
-  (= outputButton (initnext (Button "darkblue" (Position 5 1)) (prev outputButton)))
-  
-  (: clearButton Button)
-  (= clearButton (initnext (Button "red" (Position 7 1)) (prev clearButton)))
-  
-  ; Current selected tool
-  (: currentTool String)
-  (= currentTool (initnext "none" (prev currentTool)))
-  
-  ; User-placed wires
-  (: userWires (List Wire))
-  (= userWires (initnext (list) (prev userWires)))
-  
-  ; User-placed switches
-  (: userSwitches (List Switch))
-  (= userSwitches (initnext (list) (prev userSwitches)))
-  
-  ; User-placed outputs
-  (: userOutputs (List Output))
-  (= userOutputs (initnext (list) (prev userOutputs)))
   
   ; Create input switches with better positioning
   (: switch1 Switch) 
@@ -156,35 +123,4 @@
   ; Click handlers for all switches
   (on (clicked switch1) (= switch1 (updateObj switch1 "state_" (! (.. (prev switch1) state_)))))
   (on (clicked switch2) (= switch2 (updateObj switch2 "state_" (! (.. (prev switch2) state_)))))
-  
-  ; Click handlers for UI buttons
-  (on (clicked wireButton) (= currentTool "wire"))
-  (on (clicked switchButton) (= currentTool "switch"))
-  (on (clicked outputButton) (= currentTool "output"))
-  
-  ; Click handler for placing objects
-  (on (& ((clicked)) (== currentTool "wire")) 
-      (= userWires (addObj userWires (Wire false (Position (.. click x) (.. click y))))))
-  
-  (on (& ((clicked)) (== currentTool "switch")) 
-      (= userSwitches (addObj userSwitches (Switch false (Position (.. click x) (.. click y))))))
-  
-  (on (& ((clicked)) (== currentTool "output")) 
-      (= userOutputs (addObj userOutputs (Output false (Position (.. click x) (.. click y))))))
-  
-  ; Click handler for user-placed switches
-  (on (and (map (--> x (clickedObj x)) userSwitches)) 
-      (= userSwitches (map (--> s 
-                               (if (== (.. s position) (Position (.. click x) (.. click y)))
-                                   (updateObj s "state_" (! (.. s state_)))
-                                   s))
-                           userSwitches)))
-  
-  ; Clear all user-placed objects
-  (on (clicked clearButton) (
-    let (= userWires (removeObj userWires))
-        (= userSwitches (removeObj userSwitches))
-        (= userOutputs (removeObj userOutputs))
-        true
-  ))
 )
