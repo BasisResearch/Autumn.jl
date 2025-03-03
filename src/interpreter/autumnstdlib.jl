@@ -205,6 +205,13 @@ function objClicked(click::Union{Click, Nothing}, @nospecialize(objects::Abstrac
 
 end
 
+# (= objClicked (--> (objs) (
+#     filter (--> obj (clicked obj)) objs
+#   )))
+function objClicked(@nospecialize(objects::AbstractVector), state::Union{State, Nothing} = nothing)
+	filter(obj -> objClicked(obj, state), objects)
+end
+
 function clicked(click::Union{Click, Nothing}, x::Int, y::Int, @nospecialize(state::State))::Bool
 	if isnothing(click)
 		false
