@@ -151,6 +151,7 @@ const lib_to_func =
 			:intersectsPosPoss,
 			:isFreeRangeExceptObj,
 			:rotateNoCollision,
+			:isConnected,
 		]
 		begin
 			lib_to_func_ = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))

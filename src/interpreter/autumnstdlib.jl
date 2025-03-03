@@ -592,8 +592,15 @@ function adjacentObjs(obj::Object, unitSize::Int, @nospecialize(state::State))
 	filter(o -> adjacent(o.origin, obj.origin, unitSize) && (obj.id != o.id), state.scene.objects)
 end
 
-adjacentElem(e1::Object, e2::Object, unitSize::Int = 1, state::Union{State, Nothing} = nothing)::Bool = adjacent(e1.origin, e2.origin, unitSize, state)
-adjacentElem(objs1::AbstractVector, objs2::AbstractVector, unitSize::Int = 1, state::Union{State, Nothing} = nothing)::Bool = any(obj1 -> any(obj2 -> adjacentElem(obj1, obj2, unitSize, state), objs2), objs1)
+function adjacentElem(e1::Object, e2::Object, unitSize::Int = 1, state::Union{State, Nothing} = nothing)::Bool
+	rendered_cells_1 = e1.render
+	rendered_cells_2 = e2.render
+	any(c1 -> any(c2 -> adjacent(c1, c2, unitSize, state), rendered_cells_2), rendered_cells_1)
+end
+
+function adjacentElem(objs1::AbstractVector, objs2::AbstractVector, unitSize::Int = 1, state::Union{State, Nothing} = nothing)::Bool
+	any(obj1 -> any(obj2 -> adjacentElem(obj1, obj2, unitSize, state), objs2), objs1)
+end
 
 function adjacentObjsDiag(obj::Object, @nospecialize(state::State))
 	filter(o -> adjacentDiag(o.origin, obj.origin, 1) && (obj.id != o.id), state.scene.objects)
@@ -632,6 +639,17 @@ end
 function adjCorner(@nospecialize(obj1::AbstractVector), @nospecialize(obj2::AbstractVector), unitSize::Int, @nospecialize(state::State))
 	obj1_adjacentObjs = vcat(map(x -> map(obj -> !(obj.id in map(z -> z.id, adjacentObjs(obj1, unitSize, state))), adjacentObjsDiag(x, unitSize, state)), obj1)...)
 	intersect(map(x -> x.id, obj1_adjacentObjs), map(x -> x.id, obj2)) != []
+end
+
+# Generic function to check if two objects are connected through a path of objects
+function isConnected(obj1::Object, obj2::Object, connectorObjs::AbstractVector = [], state::Union{State, Nothing} = nothing)::Bool
+	# Assumes that connectorObjs are all objects that are connected to each other
+
+	# First check if obj1 and obj2 are adjacent
+	(adjacentElem(obj1, obj2, 1, state) || (obj1 in adjacentObjsDiag(obj2, 1, state))) && return true
+
+	# obj1 is adjacent to any connector object and obj2 is adjacent to any connector object
+	(any([(adjacentElem(obj1, o, 1, state) || (o in adjacentObjsDiag(obj1, 1, state))) for o in connectorObjs]) & any([(adjacentElem(obj2, o, 1, state) || (o in adjacentObjsDiag(obj2, 1, state))) for o in connectorObjs])) && return true
 end
 
 function rotate(object::Object, state::Union{State, Nothing} = nothing)::Object

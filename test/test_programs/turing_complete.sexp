@@ -1,6 +1,5 @@
 (program 
 (= GRID_SIZE 24)
-;; Doesn't work!!!
   
   ; Define enhanced objects
   (object Switch (: state_ Bool) (list 
@@ -18,58 +17,20 @@
   ; Wire object - just a single cell
   (object Wire (: powered Bool) (Cell 0 0 (if powered then "yellow" else "grey")))
   
-  ; Button object for UI controls
-  (object Button (: color String) (Cell 0 0 color))
-  
   ; Logic functions
   (= evaluateAND (--> (a b) (& a b))) 
   (= evaluateOR (--> (a b) (| a b))) 
   (= evaluateNOT (--> (a) (! a))) 
   (= evaluateXOR (--> (a b) (| (& a (! b)) (& (! a) b))))
-  
-  ; Create UI buttons
-  (: wireButton Button)
-  (= wireButton (initnext (Button "grey" (Position 1 1)) (prev wireButton)))
-  
-  (: switchButton Button)
-  (= switchButton (initnext (Button "darkgrey" (Position 3 1)) (prev switchButton)))
-  
-  (: outputButton Button)
-  (= outputButton (initnext (Button "darkblue" (Position 5 1)) (prev outputButton)))
-  
-  (: clearButton Button)
-  (= clearButton (initnext (Button "red" (Position 7 1)) (prev clearButton)))
-  
-  ; Current selected tool
-  (: currentTool String)
-  (= currentTool (initnext "none" (prev currentTool)))
-  
-  ; User-placed wires
-  (: userWires (List Wire))
-  (= userWires (initnext (list) (prev userWires)))
-  
-  ; User-placed switches
-  (: userSwitches (List Switch))
-  (= userSwitches (initnext (list) (prev userSwitches)))
-  
-  ; User-placed outputs
-  (: userOutputs (List Output))
-  (= userOutputs (initnext (list) (prev userOutputs)))
-  
+
   ; Create input switches with better positioning
   (: switch1 Switch) 
   (= switch1 (initnext (Switch false (Position 4 12)) (prev switch1)))
                           
   (: switch2 Switch) 
   (= switch2 (initnext (Switch false (Position 19 12)) (prev switch2)))
- 
-  ; === AND Gate (Row 1) ===
-  ; AND gate output
-  (: andOutput Output) 
-  (= andOutput (initnext
-               (Output false (Position 12 4))
-               (Output (evaluateAND (.. switch1 state_) (.. switch2 state_)) (Position 12 4))))
   
+  ; === AND Gate (Row 1) ===
   ; Wires from switch1 to AND
   (: andWire1 (List Wire))
   (= andWire1 (initnext 
@@ -87,14 +48,17 @@
                          (Position 15 8) (Position 14 7) (Position 13 6) 
                         ))
               (map (--> w (updateObj w "powered" (.. switch2 state_))) (prev andWire2))))
-            
-  ; === OR Gate (Row 2) ===
-  ; OR gate output
-  (: orOutput Output) 
-  (= orOutput (initnext
-              (Output false (Position 12 8))
-              (Output (evaluateOR (.. switch1 state_) (.. switch2 state_)) (Position 12 8))))
+
+  ; AND gate output
+  (: andOutput Output) 
+  (= andOutput (initnext
+               (Output false (Position 12 4))
+               (if (& (isConnected switch1 andOutput andWire1) 
+                      (isConnected switch2 andOutput andWire2)) then
+                   (Output (evaluateAND (.. switch1 state_) (.. switch2 state_)) (Position 12 4)) 
+                   else (Output false (Position 12 4)))))
   
+  ; === OR Gate (Row 2) ===
   ; Wires from switch1 to OR
   (: orWire1 (List Wire))
   (= orWire1 (initnext 
@@ -110,14 +74,17 @@
                   (list (Position 18 12) (Position 17 12) (Position 16 11) 
                         (Position 15 10) (Position 14 9) ))
              (map (--> w (updateObj w "powered" (.. switch2 state_))) (prev orWire2))))
-          
-  ; === NOT Gate (Row 3) ===
-  ; NOT gate output
-  (: notOutput Output) 
-  (= notOutput (initnext
-               (Output false (Position 12 16))
-               (Output (evaluateNOT (.. switch1 state_)) (Position 12 16))))
+
+  ; OR gate output
+  (: orOutput Output) 
+  (= orOutput (initnext
+              (Output false (Position 12 8))
+              (if (& (isConnected switch1 orOutput orWire1) 
+                     (isConnected switch2 orOutput orWire2)) then
+                  (Output (evaluateOR (.. switch1 state_) (.. switch2 state_)) (Position 12 8))
+                  else (Output false (Position 12 8)))))
   
+  ; === NOT Gate (Row 3) ===
   ; Wires from switch1 to NOT
   (: notWire (List Wire))
   (= notWire (initnext 
@@ -125,14 +92,16 @@
                   (list (Position 6 13) (Position 7 14) (Position 8 15) 
                         (Position 9 16) (Position 10 16) (Position 11 16)))
              (map (--> w (updateObj w "powered" (.. switch1 state_))) (prev notWire))))
-            
-  ; === XOR Gate (Row 4) ===
-  ; XOR gate output
-  (: xorOutput Output) 
-  (= xorOutput (initnext
-               (Output false (Position 12 20))
-               (Output (evaluateXOR (.. switch1 state_) (.. switch2 state_)) (Position 12 20))))
   
+  ; NOT gate output
+  (: notOutput Output) 
+  (= notOutput (initnext
+               (Output false (Position 12 16))
+               (if (isConnected switch1 notOutput notWire) then
+                   (Output (evaluateNOT (.. switch1 state_)) (Position 12 16))
+                   else (Output false (Position 12 16)))))
+
+  ; === XOR Gate (Row 4) ===
   ; Wires from switch1 to XOR
   (: xorWire1 (List Wire))
   (= xorWire1 (initnext 
@@ -153,38 +122,16 @@
                          (Position 16 20) (Position 15 20) (Position 14 20) ))
               (map (--> w (updateObj w "powered" (.. switch2 state_))) (prev xorWire2))))
   
+  ; XOR gate output
+  (: xorOutput Output) 
+  (= xorOutput (initnext
+               (Output false (Position 12 20))
+               (if (& (isConnected switch1 xorOutput xorWire1) 
+                      (isConnected switch2 xorOutput xorWire2)) then
+                   (Output (evaluateXOR (.. switch1 state_) (.. switch2 state_)) (Position 12 20))
+                   else (Output false (Position 12 20)))))
+                   
   ; Click handlers for all switches
   (on (clicked switch1) (= switch1 (updateObj switch1 "state_" (! (.. (prev switch1) state_)))))
   (on (clicked switch2) (= switch2 (updateObj switch2 "state_" (! (.. (prev switch2) state_)))))
-  
-  ; Click handlers for UI buttons
-  (on (clicked wireButton) (= currentTool "wire"))
-  (on (clicked switchButton) (= currentTool "switch"))
-  (on (clicked outputButton) (= currentTool "output"))
-  
-  ; Click handler for placing objects
-  (on (& ((clicked)) (== currentTool "wire")) 
-      (= userWires (addObj userWires (Wire false (Position (.. click x) (.. click y))))))
-  
-  (on (& ((clicked)) (== currentTool "switch")) 
-      (= userSwitches (addObj userSwitches (Switch false (Position (.. click x) (.. click y))))))
-  
-  (on (& ((clicked)) (== currentTool "output")) 
-      (= userOutputs (addObj userOutputs (Output false (Position (.. click x) (.. click y))))))
-  
-  ; Click handler for user-placed switches
-  (on (and (map (--> x (clickedObj x)) userSwitches)) 
-      (= userSwitches (map (--> s 
-                               (if (== (.. s position) (Position (.. click x) (.. click y)))
-                                   (updateObj s "state_" (! (.. s state_)))
-                                   s))
-                           userSwitches)))
-  
-  ; Clear all user-placed objects
-  (on (clicked clearButton) (
-    let (= userWires (removeObj userWires))
-        (= userSwitches (removeObj userSwitches))
-        (= userOutputs (removeObj userOutputs))
-        true
-  ))
 )
