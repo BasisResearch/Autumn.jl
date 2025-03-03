@@ -22,21 +22,21 @@
   (= evaluateOR (--> (a b) (| a b))) 
   (= evaluateNOT (--> (a) (! a))) 
   (= evaluateXOR (--> (a b) (| (& a (! b)) (& (! a) b))))
-  
+
+  ; Generic function to check if two objects are connected through a path of objects
+  (= isConnected (--> (obj1 obj2 connectorObjs)
+    (| (in obj1 (concat (list (adjacentObjsDiag obj2 1) (adjacentObjs obj2 1))))
+       (& (any (--> c (in c (concat (list (adjacentObjsDiag obj1 1) (adjacentObjs obj1 1))))) connectorObjs)
+          (any (--> c (in c (concat (list (adjacentObjsDiag obj2 1) (adjacentObjs obj2 1))))) connectorObjs)))))
+
   ; Create input switches with better positioning
   (: switch1 Switch) 
   (= switch1 (initnext (Switch false (Position 4 12)) (prev switch1)))
                           
   (: switch2 Switch) 
   (= switch2 (initnext (Switch false (Position 19 12)) (prev switch2)))
- 
-  ; === AND Gate (Row 1) ===
-  ; AND gate output
-  (: andOutput Output) 
-  (= andOutput (initnext
-               (Output false (Position 12 4))
-               (Output (evaluateAND (.. switch1 state_) (.. switch2 state_)) (Position 12 4))))
   
+  ; === AND Gate (Row 1) ===
   ; Wires from switch1 to AND
   (: andWire1 (List Wire))
   (= andWire1 (initnext 
@@ -54,14 +54,21 @@
                          (Position 15 8) (Position 14 7) (Position 13 6) 
                         ))
               (map (--> w (updateObj w "powered" (.. switch2 state_))) (prev andWire2))))
-            
-  ; === OR Gate (Row 2) ===
-  ; OR gate output
-  (: orOutput Output) 
-  (= orOutput (initnext
-              (Output false (Position 12 8))
-              (Output (evaluateOR (.. switch1 state_) (.. switch2 state_)) (Position 12 8))))
+
+  ; AND gate output
+  (: andOutput Output) 
+  (= andOutput (initnext
+               (Output false (Position 12 4))
+               (let
+               (= connected (& (isConnected switch1 andOutput andWire1)
+                               (isConnected switch2 andOutput andWire2)))
+               (print "AND")
+               (print connected)
+               (= powered (evaluateAND (.. switch1 state_) (.. switch2 state_)))
+               (Output (& connected powered) (Position 12 4))
+               )))
   
+  ; === OR Gate (Row 2) ===
   ; Wires from switch1 to OR
   (: orWire1 (List Wire))
   (= orWire1 (initnext 
@@ -77,14 +84,21 @@
                   (list (Position 18 12) (Position 17 12) (Position 16 11) 
                         (Position 15 10) (Position 14 9) ))
              (map (--> w (updateObj w "powered" (.. switch2 state_))) (prev orWire2))))
-          
-  ; === NOT Gate (Row 3) ===
-  ; NOT gate output
-  (: notOutput Output) 
-  (= notOutput (initnext
-               (Output false (Position 12 16))
-               (Output (evaluateNOT (.. switch1 state_)) (Position 12 16))))
+
+  ; OR gate output
+  (: orOutput Output) 
+  (= orOutput (initnext
+              (Output false (Position 12 8))
+              (let
+              (= connected (& (isConnected switch1 orOutput orWire1)
+                              (isConnected switch2 orOutput orWire2)))
+              (print "OR")
+              (print connected)
+              (= powered (evaluateOR (.. switch1 state_) (.. switch2 state_)))
+              (Output (& connected powered) (Position 12 8))
+              )))
   
+  ; === NOT Gate (Row 3) ===
   ; Wires from switch1 to NOT
   (: notWire (List Wire))
   (= notWire (initnext 
@@ -92,14 +106,20 @@
                   (list (Position 6 13) (Position 7 14) (Position 8 15) 
                         (Position 9 16) (Position 10 16) (Position 11 16)))
              (map (--> w (updateObj w "powered" (.. switch1 state_))) (prev notWire))))
-            
-  ; === XOR Gate (Row 4) ===
-  ; XOR gate output
-  (: xorOutput Output) 
-  (= xorOutput (initnext
-               (Output false (Position 12 20))
-               (Output (evaluateXOR (.. switch1 state_) (.. switch2 state_)) (Position 12 20))))
   
+  ; NOT gate output
+  (: notOutput Output) 
+  (= notOutput (initnext
+               (Output false (Position 12 16))
+               (let
+               (= connected (isConnected switch1 notOutput notWire))
+               (print "NOT")
+               (print connected)
+               (= powered (evaluateNOT (.. switch1 state_)))
+               (Output (& connected powered) (Position 12 16))
+               )))
+
+  ; === XOR Gate (Row 4) ===
   ; Wires from switch1 to XOR
   (: xorWire1 (List Wire))
   (= xorWire1 (initnext 
@@ -120,6 +140,19 @@
                          (Position 16 20) (Position 15 20) (Position 14 20) ))
               (map (--> w (updateObj w "powered" (.. switch2 state_))) (prev xorWire2))))
   
+  ; XOR gate output
+  (: xorOutput Output) 
+  (= xorOutput (initnext
+               (Output false (Position 12 20))
+               (let
+               (= connected (& (isConnected switch1 xorOutput xorWire1)
+                               (isConnected switch2 xorOutput xorWire2)))
+               (print "XOR")
+               (print connected)
+               (= powered (evaluateXOR (.. switch1 state_) (.. switch2 state_)))
+               (Output (& connected powered) (Position 12 20))
+               )))
+                   
   ; Click handlers for all switches
   (on (clicked switch1) (= switch1 (updateObj switch1 "state_" (! (.. (prev switch1) state_)))))
   (on (clicked switch2) (= switch2 (updateObj switch2 "state_" (! (.. (prev switch2) state_)))))

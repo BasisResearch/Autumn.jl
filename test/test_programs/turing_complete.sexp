@@ -65,22 +65,37 @@
 
   ; Lists to store placed objects
   (: switches (List Switch))
-  (= switches (initnext (list) (prev switches)))
+  (= switches (initnext (list (Switch false (Position 4 12)) (Switch false (Position 19 12))) (prev switches)))
 
   (: wires (List Wire))
-  (= wires (initnext (list) (prev wires)))
+  (= wires (initnext (list 
+    (Wire false (Position 6 11)) (Wire false (Position 7 10)) (Wire false (Position 8 9)) (Wire false (Position 9 8))
+    (Wire false (Position 10 7)) (Wire false (Position 11 6)) (Wire false (Position 11 5))
+    (Wire false (Position 18 11)) (Wire false (Position 17 10)) (Wire false (Position 16 9)) (Wire false (Position 15 8))
+    (Wire false (Position 14 7)) (Wire false (Position 13 6)) (Wire false (Position 6 12)) (Wire false (Position 7 12))
+    (Wire false (Position 8 11)) (Wire false (Position 9 10)) (Wire false (Position 10 9)) (Wire false (Position 11 9))
+    (Wire false (Position 18 12)) (Wire false (Position 17 12)) (Wire false (Position 16 11)) (Wire false (Position 15 10))
+    (Wire false (Position 14 9)) (Wire false (Position 6 13)) (Wire false (Position 7 14)) (Wire false (Position 8 15))
+    (Wire false (Position 9 16)) (Wire false (Position 10 16)) (Wire false (Position 11 16)) (Wire false (Position 6 13))
+    (Wire false (Position 6 14)) (Wire false (Position 6 15)) (Wire false (Position 6 16)) (Wire false (Position 6 17))
+    (Wire false (Position 6 18)) (Wire false (Position 6 19)) (Wire false (Position 6 20)) (Wire false (Position 7 20))
+    (Wire false (Position 8 20)) (Wire false (Position 9 20)) (Wire false (Position 10 20)) (Wire false (Position 11 20))
+    (Wire false (Position 18 13)) (Wire false (Position 18 14)) (Wire false (Position 18 15)) (Wire false (Position 18 16))
+    (Wire false (Position 18 17)) (Wire false (Position 18 18)) (Wire false (Position 18 19)) (Wire false (Position 18 20))
+    (Wire false (Position 17 20)) (Wire false (Position 16 20)) (Wire false (Position 15 20)) (Wire false (Position 14 20))
+    ) (prev wires)))
 
   (: andOutputs (List AndOutput))
-  (= andOutputs (initnext (list) (prev andOutputs)))
+  (= andOutputs (initnext (list (AndOutput false (Position 12 4))) (prev andOutputs)))
 
   (: orOutputs (List OrOutput))
-  (= orOutputs (initnext (list) (prev orOutputs)))
+  (= orOutputs (initnext (list (OrOutput false (Position 12 8))) (prev orOutputs)))
 
   (: notOutputs (List NotOutput))
-  (= notOutputs (initnext (list) (prev notOutputs)))
+  (= notOutputs (initnext (list (NotOutput false (Position 12 16))) (prev notOutputs)))
 
   (: xorOutputs (List XorOutput))
-  (= xorOutputs (initnext (list) (prev xorOutputs)))
+  (= xorOutputs (initnext (list (XorOutput false (Position 12 20))) (prev xorOutputs)))
 
   ; Current placement mode
   (: placementMode String)
@@ -91,12 +106,6 @@
   (= evaluateOR (--> (a b) (| a b))) 
   (= evaluateNOT (--> (a) (! a))) 
   (= evaluateXOR (--> (a b) (| (& a (! b)) (& (! a) b))))
-
-  ; Generic function to check if two objects are connected through a path of objects
-  (= isConnected (--> (obj1 obj2 connectorObjs)
-    (| (in obj1 (concat (list (adjacentObjsDiag obj2 1) (adjacentObjs obj2 1))))
-       (& (any (--> c (in c (concat (list (adjacentObjsDiag obj1 1) (adjacentObjs obj1 1))))) connectorObjs)
-          (any (--> c (in c (concat (list (adjacentObjsDiag obj2 1) (adjacentObjs obj2 1))))) connectorObjs)))))
 
   ; Click handlers for buttons
   (on (clicked wireButton) (= placementMode "wire"))
@@ -137,10 +146,12 @@
     (= xorOutputs (addObj xorOutputs (XorOutput false (Position (.. click x) (.. click y))))))
 
   ; Click handler for toggling switches
-  (on (& (clicked (filter (--> obj (in obj switches)) (prev switches))) (== placementMode "play"))
+  (on (& (clicked switches) (== placementMode "play"))
     (let
       (= clickedSwitch (head (filter (--> obj (clicked obj)) (prev switches))))
-      (= switches (updateObj switches (--> obj (if (== obj clickedSwitch) then (updateObj obj "state_" (! (.. obj state_))) else obj))))
+      (= switches (removeObj switches clickedSwitch))
+      (= clickedSwitch (updateObj clickedSwitch "state_" (! (.. clickedSwitch state_))))
+      (= switches (addObj switches clickedSwitch))
       true
     ))
 
@@ -197,6 +208,4 @@
         ))))
       true
     ))
-
-  
 )
