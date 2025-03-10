@@ -2,11 +2,11 @@
 (= GRID_SIZE 24)
   
   ; Define enhanced objects
-  (object Switch (: state_ Bool) (list 
-                                  (Cell 0 0 (if state_ then "red" else "white"))
-                                  (Cell 0 1 (if state_ then "red" else "white"))
-                                  (Cell 1 0 (if state_ then "red" else "white"))
-                                  (Cell 1 1 (if state_ then "red" else "white"))))
+  (object Switch (: powered Bool) (list 
+                                  (Cell 0 0 (if powered then "red" else "white"))
+                                  (Cell 0 1 (if powered then "red" else "white"))
+                                  (Cell 1 0 (if powered then "red" else "white"))
+                                  (Cell 1 1 (if powered then "red" else "white"))))
   
   (object AndOutput (: powered Bool) (list 
                                   (Cell 0 0 (if powered then "orange" else "darkblue"))
@@ -31,6 +31,8 @@
                                   (Cell 0 1 (if powered then "orange" else "purple"))
                                   (Cell 1 0 (if powered then "orange" else "purple"))
                                   (Cell 1 1 (if powered then "orange" else "purple"))))
+
+  (= isPowered (--> obj (.. obj powered)))
   
   ; Wire object - just a single cell
   (object Wire (: powered Bool) (Cell 0 0 (if powered then "yellow" else "grey")))
@@ -99,7 +101,7 @@
 
   ; Current placement mode
   (: placementMode String)
-  (= placementMode (initnext "play" (prev placementMode)))
+  (= placementMode (initnext "play" (prev "placementMode")))
 
   ; Logic functions
   (= evaluateAND (--> (a b) (& a b))) 
@@ -150,62 +152,70 @@
     (let
       (= clickedSwitch (head (filter (--> obj (clicked obj)) (prev switches))))
       (= switches (removeObj switches clickedSwitch))
-      (= clickedSwitch (updateObj clickedSwitch "state_" (! (.. clickedSwitch state_))))
+      (= clickedSwitch (updateObj clickedSwitch "powered" (! (.. clickedSwitch powered))))
       (= switches (addObj switches clickedSwitch))
       true
     ))
 
-  ; Update wire states based on connected switches
+  ; Update wire states based on if adjacent objects or diagonal objects are powered
   (on true
-    (= wires (updateObj wires (--> wire
+    (= wires (updateObj wires (--> wire 
       (let
-        (= connectedSwitches (filter (--> switch (isConnected switch wire switches)) switches))
-        (= powered (any (--> switch (.. switch state_)) connectedSwitches))
-        (updateObj wire "powered" powered)
-      )))))
+        (= adjObjs (concat 
+          (adjacentObjs wire 1)  ; Check adjacent connections
+          (adjacentObjsDiag wire) ; Check diagonal connections
+        ))
+        (print adjObjs)
+        (= poweredAdjObjs (filter (--> obj (isPowered obj)) adjObjs))
+        (updateObj wire "powered" (> (length poweredAdjObjs) 0))
+      )
+    )))
+  )
 
-  ; Update gate outputs based on connected wires and switches
+  ; Update gate outputs based on connected wires
   (on true
-    (let
-      (= andOutputs (updateObj andOutputs (--> gate
-        (let
-          (= connectedWires (filter (--> wire (isConnected wire gate wires)) wires))
-          (= connectedSwitches (filter (--> switch (isConnected switch gate switches)) switches))
-          (= powered (evaluateAND 
-            (any (--> wire (.. wire powered)) connectedWires)
-            (any (--> switch (.. switch state_)) connectedSwitches)))
-          (updateObj gate "powered" powered)
-        ))))
+    (= andOutputs (updateObj andOutputs (--> output
+      (let
+        (= adjWires (concat
+          (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
+          (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
+        ))
+        (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
+        (updateObj output "powered" (== (length poweredWires) 2))
+      )
+    )))
 
-      (= orOutputs (updateObj orOutputs (--> gate
-        (let
-          (= connectedWires (filter (--> wire (isConnected wire gate wires)) wires))
-          (= connectedSwitches (filter (--> switch (isConnected switch gate switches)) switches))
-          (= powered (evaluateOR 
-            (any (--> wire (.. wire powered)) connectedWires)
-            (any (--> switch (.. switch state_)) connectedSwitches)))
-          (updateObj gate "powered" powered)
-        ))))
+    (= orOutputs (updateObj orOutputs (--> output
+      (let
+        (= adjWires (concat
+          (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
+          (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
+        ))
+        (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
+        (updateObj output "powered" (> (length poweredWires) 0))
+      )
+    )))
 
-      (= notOutputs (updateObj notOutputs (--> gate
-        (let
-          (= connectedWires (filter (--> wire (isConnected wire gate wires)) wires))
-          (= connectedSwitches (filter (--> switch (isConnected switch gate switches)) switches))
-          (= powered (evaluateNOT 
-            (any (--> wire (.. wire powered)) connectedWires)
-            (any (--> switch (.. switch state_)) connectedSwitches)))
-          (updateObj gate "powered" powered)
-        ))))
+    (= notOutputs (updateObj notOutputs (--> output
+      (let
+        (= adjWires (concat
+          (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
+          (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
+        ))
+        (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
+        (updateObj output "powered" (== (length poweredWires) 0))
+      )
+    )))
 
-      (= xorOutputs (updateObj xorOutputs (--> gate
-        (let
-          (= connectedWires (filter (--> wire (isConnected wire gate wires)) wires))
-          (= connectedSwitches (filter (--> switch (isConnected switch gate switches)) switches))
-          (= powered (evaluateXOR 
-            (any (--> wire (.. wire powered)) connectedWires)
-            (any (--> switch (.. switch state_)) connectedSwitches)))
-          (updateObj gate "powered" powered)
-        ))))
-      true
-    ))
+    (= xorOutputs (updateObj xorOutputs (--> output
+      (let
+        (= adjWires (concat
+          (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
+          (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
+        ))
+        (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
+        (updateObj output "powered" (== (length poweredWires) 1))
+      )
+    )))
+  )
 )
