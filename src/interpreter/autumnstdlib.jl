@@ -5,6 +5,7 @@ using Setfield
 using Distributions: Categorical
 import Base: floor, round, min
 export Object, ObjectType, Scene, State, Env
+import Base: ==
 
 struct Click
 	x::Int
@@ -31,6 +32,10 @@ struct Object
 	custom_fields::Dict{Symbol, Any}
 	render::Union{Nothing, Vector{Cell}}
 end
+function (==)(obj1::Object, obj2::Object)
+	obj1.id == obj2.id
+end
+
 
 struct ObjectType
 	render::Union{Nothing, AExpr, Vector{Cell}}
@@ -203,13 +208,6 @@ function objClicked(click::Union{Click, Nothing}, @nospecialize(objects::Abstrac
 		end
 	end
 
-end
-
-# (= objClicked (--> (objs) (
-#     filter (--> obj (clicked obj)) objs
-#   )))
-function objClicked(@nospecialize(objects::AbstractVector), state::Union{State, Nothing} = nothing)
-	filter(obj -> objClicked(obj, state), objects)
 end
 
 function clicked(click::Union{Click, Nothing}, x::Int, y::Int, @nospecialize(state::State))::Bool
@@ -660,6 +658,11 @@ end
 
 function rotate(position::Position, state::Union{State, Nothing} = nothing)::Position
 	Position(-position.y, position.x)
+end
+
+function rotateByAngle(object::Object, angle, state::Union{State, Nothing} = nothing)::Object
+	@show object.render
+	object
 end
 
 function rotateNoCollision(object::Object, @nospecialize(state::State))::Object
