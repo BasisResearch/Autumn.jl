@@ -555,7 +555,10 @@ deltaObj(obj1::Object, obj2::Object, state::Union{State, Nothing} = nothing)::Po
 #         (<= (+ (abs (.. delta x)) (abs (.. delta y))) unitSize)
 #     )
 #   ))
-adjacentPoss(p1::Position, p2::Position, unitSize::Int, state::Union{State, Nothing} = nothing)::Bool = displacement(p1, p2, state) in [Position(0, unitSize), Position(unitSize, 0), Position(0, -unitSize), Position(-unitSize, 0)]
+function adjacentPoss(p1::Position, p2::Position, unitSize::Int, state::Union{State, Nothing} = nothing)::Bool
+	delta = deltaPos(p1, p2, state)
+	(abs(delta.x) + abs(delta.y)) <= unitSize
+end
 
 
 #   (= adjacentTwoObjs (--> (obj1 obj2 unitSize) (
