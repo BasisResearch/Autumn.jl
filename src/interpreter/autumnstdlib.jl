@@ -520,6 +520,16 @@ function displacement(cell1::Cell, cell2::Cell, state::Union{State, Nothing} = n
 	displacement(cell1.position, cell2.position)
 end
 
+# (= deltaPos (--> (pos1 pos2) 
+# (Position 
+# (- (.. pos2 x) (.. pos1 x)) 
+# (- (.. pos2 y) (.. pos1 y))
+# )
+# ))
+function deltaPos(pos1::Position, pos2::Position, state::Union{State, Nothing} = nothing)::Position
+	Position(pos2.x - pos1.x, pos2.y - pos1.y)
+end
+
 # (= deltaElem (--> (e1 e2)
 #     (deltaPos (.. e1 position) (.. e2 position))
 #   ))

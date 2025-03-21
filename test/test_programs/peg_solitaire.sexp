@@ -14,7 +14,13 @@
            (Peg false false (Position 2 5)) (Peg false false (Position 3 5)) (Peg false false (Position 4 5))
            (Peg false false (Position 2 6)) (Peg false false (Position 3 6)) (Peg false false (Position 4 6))
            ) (prev pegs)))
-  
+  ; Jump condition
+  (= check_jump_possible (--> (p1 p2) (
+    let (= delta (deltaPos p1 p2))
+        (== (+ (abs (.. delta x)) (abs (.. delta y))) 2)
+    )
+  ))
+
   ; Activate a peg if it is empty and not active
   (on (clicked (filter (--> obj (== (.. obj empty) false)) (prev pegs))) (let 
       ; Set the clicked peg to active
@@ -27,7 +33,7 @@
           ; Find the peg that is active
           (= active_peg (head (filter (--> peg (== (.. peg active) true)) (prev pegs))))
           ; Check if the active peg is 2 units away from the clicked peg
-          (= jump_possible (adjacentPoss (.. active_peg origin) (Position (.. click x) (.. click y)) 2))
+          (= jump_possible (check_jump_possible (.. active_peg origin) (Position (.. click x) (.. click y))))
           ; If the jump is possible, remove the peg in between
           (if jump_possible then
             (let

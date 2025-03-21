@@ -49,7 +49,7 @@ function update(Γ::Object, x::Symbol, v)::Object
 end
 
 # primitive function handling 
-const prim_to_func = let prims = (:+, :-, :*, :/, :&, :!, :|, :>, :>=, :<, :<=, :(==), :%, :!=)
+const prim_to_func = let prims = (:+, :-, :*, :/, :&, :!, :|, :>, :>=, :<, :<=, :(==), :%, :!=, :abs)
 	NamedTuple{prims}(getproperty.(Ref(Base), prims))
 end
 
@@ -152,6 +152,7 @@ const lib_to_func =
 			:isFreeRangeExceptObj,
 			:rotateNoCollision,
 			:isConnected,
+			:deltaPos,
 		]
 		begin
 			lib_to_func_ = Dict(zip(autumn_keys, getproperty.(Ref(AutumnStandardLibrary), autumn_keys)))
