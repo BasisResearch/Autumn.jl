@@ -35,12 +35,10 @@
               (= mid_pos (Position (/(+ (.. (.. active_peg origin) x) (.. click x)) 2) (/(+ (.. (.. active_peg origin) y) (.. click y)) 2)))
               ; Remove the peg in between
               (= pegs (updateObj pegs (--> peg (updateObj peg "empty" true)) (--> peg (== (.. peg origin) mid_pos))))
-              ; Move the active peg to the clicked position
-              (= active_peg (updateObj active_peg "origin" (Position (.. click x) (.. click y))))
-              ; Set the active peg to inactive
-              (= active_peg (updateObj active_peg "active" false))
-              ; Update the pegs
-              (= pegs (updateObj pegs (--> peg active_peg) (--> peg (== peg active_peg))))
+              ; Make the clicked peg non-empty
+              (= pegs (updateObj pegs (--> peg (updateObj peg "empty" false)) (--> peg (== (.. peg origin) (Position (.. click x) (.. click y))))))
+              ; Set the active peg to empty
+              (= pegs (updateObj pegs (--> peg (updateObj peg "empty" true)) (--> peg (== peg active_peg))))
               ) else true
           )
           true
