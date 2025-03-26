@@ -40,8 +40,10 @@
 
     (= create_hint (fn (guess) (let
     (= num_correct (length (filter (--> o (in (.. o col) correct_answer)) guess)))
-    ; (= num_correct_and_position (length (filter (--> o (== o (.. guess col))) (map (--> o (.. o col)) correct_answer))))
-    ; (print num_correct_and_position)
+    (= num_correct_and_position (length (filter (--> o (== o true)) (and (eq (map (--> o (.. o col)) guess) correct_answer)))))
+    (print num_correct)
+    (print num_correct_and_position)
+    ; find random position for each hint
     (list (Hint "black" (Position 0 0)) (Hint "black" (Position 1 0)) (Hint "black" (Position 0 1)) (Hint "black" (Position 1 1)))
     )))
 
@@ -56,6 +58,8 @@
     (= prev_guesses (vcat (map (--> cg (addObj (prev prev_guesses) cg)) (prev curr_guess))))
     (= prev_guesses (map (--> o (moveDown o)) prev_guesses))
     (= prev_guesses (map (--> o (moveDown o)) prev_guesses))
+    (= hints (map (--> h (moveDown h)) hints))
+    (= hints (map (--> h (moveDown h)) hints))
     (if (is_correct curr_guess) then ( let
     (print "correct")
     ) else ( let
