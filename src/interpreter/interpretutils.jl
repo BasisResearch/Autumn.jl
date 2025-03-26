@@ -204,6 +204,7 @@ const julia_lib_to_func =
 		vcat = vcat,
 		count = count,
 		any = any,
+		all = all,
 		and = .&,
 		or = .|,
 		not = .!,
@@ -225,6 +226,8 @@ function julialibapl(f, args, @nospecialize(Γ::Env))
 		interpret_julia_filter(args, Γ)
 	elseif f == :any
 		interpret_julia_any(args, Γ)
+	elseif f == :all
+		interpret_julia_all(args, Γ)
 	end
 end
 
@@ -745,6 +748,23 @@ function interpret_julia_any(args, @nospecialize(Γ::Env))
 			push!(new_list, v)
 		end
 		return any(new_list), Γ
+	elseif length(args) == 1
+		list, Γ = interpret(args[1], Γ)
+		return any(list), Γ
+	end
+end
+
+function interpret_julia_all(args, @nospecialize(Γ::Env))
+	# If there are two arguments, use the first as a predicate on the second argument
+	if length(args) == 2
+		p = args[1]
+		list, Γ = interpret(args[2], Γ)
+		new_list = []
+		for item in list
+			v, Γ = interpret(AExpr(:call, p, item), Γ)
+			push!(new_list, v)
+		end
+		return all(new_list), Γ
 	elseif length(args) == 1
 		list, Γ = interpret(args[1], Γ)
 		return all(list), Γ
