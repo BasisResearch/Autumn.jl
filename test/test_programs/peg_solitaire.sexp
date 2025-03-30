@@ -17,7 +17,8 @@
   ; Jump condition
   (= check_jump_possible (--> (p1 p2) (
     let (= delta (deltaPos p1 p2))
-        (== (+ (abs (.. delta x)) (abs (.. delta y))) 2)
+    (print delta)
+        (in delta (list (Position 2 0) (Position -2 0) (Position 0 2) (Position 0 -2)))
     )
   ))
 
