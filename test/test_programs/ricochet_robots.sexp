@@ -15,18 +15,33 @@
                     (if (== orientation "horizontal")
                         then (rect (Position 0 0) (Position length 1))
                         else (rect (Position 0 0) (Position 1 length)))))
-           
+  
+  (: possiblePos (List Position))
+  (= possiblePos (rect (Position 1 1) (Position (- GRID_SIZE 1) (- GRID_SIZE 1))))
+
+  (= robotPos (fn () (let 
+  (= pos (head (uniformChoice possiblePos 1)))
+  (= possiblePos (removeObj possiblePos pos))
+  pos
+  )))
+
+  (= wallPos (fn () (let 
+  (= pos (head (uniformChoice possiblePos 1)))
+  (= possiblePos (removeObj possiblePos pos))
+  pos
+  )))
+
   (: robot1 Robot) 
-  (= robot1 (Robot "red" true "none" false (Position 5 5))) ; robot1 is active at first
+  (= robot1 (Robot "red" true "none" false ((robotPos)))) ; robot1 is active at first
   
   (: robot2 Robot) 
-  (= robot2 (Robot "blue" false "none" false (Position 18 7)))
+  (= robot2 (Robot "blue" false "none" false ((robotPos))))
   
   (: robot3 Robot) 
-  (= robot3 (Robot "green" false "none" false (Position 8 17)))
+  (= robot3 (Robot "green" false "none" false ((robotPos))))
   
   (: robot4 Robot) 
-  (= robot4 (Robot "yellow" false "none" false (Position 15 15)))
+  (= robot4 (Robot "yellow" false "none" false ((robotPos))))
 
   ; Border walls
   (: borders Border) 
@@ -36,45 +51,45 @@
   
   ; Inner walls - Ricochet Robots style
   (: innerWall1 InnerWall)
-  (= innerWall1 (InnerWall "horizontal" 4 (Position 4 6)))
+  (= innerWall1 (InnerWall "horizontal" 4 ((wallPos))))
   
   (: innerWall2 InnerWall)
-  (= innerWall2 (InnerWall "vertical" 5 (Position 10 3)))
+  (= innerWall2 (InnerWall "vertical" 5 ((wallPos))))
   
   (: innerWall3 InnerWall)
-  (= innerWall3 (InnerWall "horizontal" 6 (Position 12 8)))
+  (= innerWall3 (InnerWall "horizontal" 6 ((wallPos))))
   
   (: innerWall4 InnerWall)
-  (= innerWall4 (InnerWall "vertical" 3 (Position 17 12)))
+  (= innerWall4 (InnerWall "vertical" 3 ((wallPos))))
   
   (: innerWall5 InnerWall)
-  (= innerWall5 (InnerWall "horizontal" 5 (Position 3 15)))
+  (= innerWall5 (InnerWall "horizontal" 5 ((wallPos))))
   
   (: innerWall6 InnerWall)
-  (= innerWall6 (InnerWall "vertical" 4 (Position 7 18)))
+  (= innerWall6 (InnerWall "vertical" 4 ((wallPos))))
   
   (: innerWall7 InnerWall)
-  (= innerWall7 (InnerWall "horizontal" 3 (Position 15 20)))
+  (= innerWall7 (InnerWall "horizontal" 3 ((wallPos))))
   
   (: innerWall8 InnerWall)
-  (= innerWall8 (InnerWall "vertical" 6 (Position 20 9)))
+  (= innerWall8 (InnerWall "vertical" 6 ((wallPos))))
   
   ; Center walls forming a 2x2 square in the middle
   (: centerWall (List Wall))
-  (= centerWall1 (list (Wall (Position 11 11)) (Wall (Position 12 11)) (Wall (Position 11 12)) (Wall (Position 12 12)) ))
+  (= centerWall (list (Wall (Position 11 11)) (Wall (Position 12 11)) (Wall (Position 11 12)) (Wall (Position 12 12)) ))
   
   ; Quadrant divider walls
   (: quadWall1 InnerWall)
-  (= quadWall1 (InnerWall "horizontal" 5 (Position 2 9)))
-  
+  (= quadWall1 (InnerWall "horizontal" 5 ((wallPos))))
+
   (: quadWall2 InnerWall)
-  (= quadWall2 (InnerWall "vertical" 4 (Position 15 5)))
+  (= quadWall2 (InnerWall "vertical" 4 ((wallPos))))
   
   (: quadWall3 InnerWall)
-  (= quadWall3 (InnerWall "horizontal" 4 (Position 18 16)))
+  (= quadWall3 (InnerWall "horizontal" 4 ((wallPos))))
   
   (: quadWall4 InnerWall)
-  (= quadWall4 (InnerWall "vertical" 3 (Position 5 19)))
+  (= quadWall4 (InnerWall "vertical" 3 ((wallPos))))
   
   ; Robot selection handlers
   (on (clicked robot1) 
