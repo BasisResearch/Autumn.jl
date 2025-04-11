@@ -70,4 +70,6 @@
     
       (: ball_b Ball)
       (= ball_b (initnext (Ball 6 "red" (Position 15 5)) (if (intersects (prev ball_a) ball_b) then (nextBall (updateObj (prev ball_b) "direction" 2)) else (nextBall (updateObj (prev ball_b) "direction" (wallintersect (prev ball_b)))))))
+  (on ((left)) (= wall (moveLeftNoCollision wall)))
+  (on ((right)) (= wall (moveRightNoCollision wall)))
       )

@@ -11,7 +11,7 @@
                                         (Cell 0 4 (if broken then "yellow" else "white"))))
 
   (object BottleSpot (Cell 0 0 "white"))
-  (object Rock (Cell 0 0 "gray"))
+  (object Rock (: breaksBottle Bool) (Cell 0 0 "gray"))
 
   (: suzie Suzie)
   (= suzie (Suzie (Position 0 0)))
@@ -22,19 +22,22 @@
   (: bottleSpot BottleSpot)
   (= bottleSpot (initnext (BottleSpot (Position 15 7)) (BottleSpot (Position 15 7))))
 
-
   (: rocks (List Rock))
   (= rocks
     (initnext (list)
               (updateObj (prev rocks) (--> obj
                               (if (intersects bottleSpot obj) then (removeObj obj)
                                 else (move obj (unitVector obj bottleSpot)))))))
-  (= nextBottle (fn (bot rockst bottleSpott) (if (intersects bottleSpott rockst) then (updateObj bot "broken" true) else bot)))
+  
+  (= nextBottle (fn (bot rockst bottleSpott) (if 
+  (> (length (filter (--> r (& (.. r breaksBottle) (intersects bottleSpott r))) rockst)) 0) 
+  then (updateObj bot "broken" true) 
+  else bot)))
 
   (: bottle Bottle)
   (= bottle (initnext (Bottle false (Position 15 5)) (nextBottle (prev bottle) (prev rocks) (prev bottleSpot))))
 
-  (on (clicked suzie) (= rocks (addObj (prev rocks) (Rock (Position 0 0)))))
-  (on (clicked billy) (= rocks (addObj (prev rocks) (Rock (Position 0 15)))))
+  (on (clicked suzie) (= rocks (addObj (prev rocks) (Rock (uniformChoice (list true false)) (Position 0 0)))))
+  (on (clicked billy) (= rocks (addObj (prev rocks) (Rock (uniformChoice (list true false)) (Position 0 15)))))
 
   )

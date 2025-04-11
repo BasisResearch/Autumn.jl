@@ -165,7 +165,6 @@
           (adjacentObjs wire 1)  ; Check adjacent connections
           (adjacentObjsDiag wire) ; Check diagonal connections
         ))
-        (print adjObjs)
         (= poweredAdjObjs (filter (--> obj (isPowered obj)) adjObjs))
         (updateObj wire "powered" (> (length poweredAdjObjs) 0))
       )
