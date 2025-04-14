@@ -210,7 +210,7 @@ const julia_lib_to_func =
 		not = .!,
 		concat = vcat,
 		head = first,
-		eq = .==,
+		arrayEqual = .==,
 		tail = last)
 isjulialib(f) = f in keys(julia_lib_to_func)
 

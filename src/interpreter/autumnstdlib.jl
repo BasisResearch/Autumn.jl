@@ -376,6 +376,10 @@ function removeObj(@nospecialize(list::AbstractVector), obj::Object, state::Unio
 	new_list
 end
 
+function removeObj(@nospecialize(list::AbstractVector), num::N, state::Union{State, Nothing} = nothing) where N <: Union{Number, String}
+	filter(o -> o != num, list)
+end
+
 function removeObj(@nospecialize(list::AbstractVector), fn, state::Union{State, Nothing} = nothing)
 	new_list = deepcopy(list)
 	println("removeObj: $(fn)")
