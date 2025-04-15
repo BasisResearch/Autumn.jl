@@ -161,10 +161,10 @@
   (on true
     (= wires (updateObj wires (--> wire 
       (let
-        (= adjObjs (concat 
+        (= adjObjs (concat (list
           (adjacentObjs wire 1)  ; Check adjacent connections
           (adjacentObjsDiag wire) ; Check diagonal connections
-        ))
+        )))
         (= poweredAdjObjs (filter (--> obj (isPowered obj)) adjObjs))
         (updateObj wire "powered" (> (length poweredAdjObjs) 0))
       )
@@ -175,10 +175,10 @@
   (on true
     (= andOutputs (updateObj andOutputs (--> output
       (let
-        (= adjWires (concat
+        (= adjWires (concat (list
           (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
           (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
-        ))
+        )))
         (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
         (updateObj output "powered" (== (length poweredWires) 2))
       )
@@ -186,10 +186,10 @@
 
     (= orOutputs (updateObj orOutputs (--> output
       (let
-        (= adjWires (concat
+        (= adjWires (concat (list
           (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
           (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
-        ))
+        )))
         (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
         (updateObj output "powered" (> (length poweredWires) 0))
       )
@@ -197,10 +197,10 @@
 
     (= notOutputs (updateObj notOutputs (--> output
       (let
-        (= adjWires (concat
+        (= adjWires (concat (list
           (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
           (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
-        ))
+        )))
         (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
         (updateObj output "powered" (== (length poweredWires) 0))
       )
@@ -208,10 +208,10 @@
 
     (= xorOutputs (updateObj xorOutputs (--> output
       (let
-        (= adjWires (concat
+        (= adjWires (concat (list
           (filter (--> obj (adjacentTwoObjs obj output 1)) wires)  ; Check adjacent connections
           (filter (--> obj (adjacentTwoObjsDiag obj output)) wires) ; Check diagonal connections
-        ))
+        )))
         (= poweredWires (filter (--> wire (isPowered wire)) adjWires))
         (updateObj output "powered" (== (length poweredWires) 1))
       )

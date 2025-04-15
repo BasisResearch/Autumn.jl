@@ -65,11 +65,11 @@
 
 
   (: feathers (List Feather))
-  (= feathers (initnext (makeChick) (prev feathers)))
+  (= feathers (initnext ((makeChick)) (prev feathers)))
 
 
   (: eggshells (List Eggshell))
-  (= eggshells (initnext (makeEgg) (nextEggshells (prev eggshells) (prev feathers))))
+  (= eggshells (initnext ((makeEgg)) (nextEggshells (prev eggshells) (prev feathers))))
 
 
   (on (clicked eggshells) (= eggshells (updateObj (prev eggshells) 
