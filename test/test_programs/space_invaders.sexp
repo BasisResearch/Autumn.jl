@@ -2,7 +2,7 @@
 (= GRID_SIZE 16)
 
 (object Enemy (Cell 0 0 "blue"))
-(object Hero (: alive Bool) (Cell 0 0 "gray"))
+(object Hero (: alive Bool) (Cell 0 0 (if alive then "gray" else "black")))
 (object Bullet (Cell 0 0 "red"))
 (object EnemyBullet (Cell 0 0 "orange"))
 

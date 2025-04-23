@@ -25,21 +25,20 @@
   (: height Number)
   (= height (initnext 15 (prev height)))
   
-  (on (& gravity (defined egg)) (= egg (moveDownNoCollision (prev egg))))
+  (on (& gravity (defined "egg")) (= egg (moveDownNoCollision (prev egg))))
     
-  (on (& left (& (! gravity) (defined egg))) (= egg (moveLeftNoCollision (prev egg))))
-  (on (& right (& (! gravity) (defined egg))) (= egg (moveRightNoCollision (prev egg))))
-  (on (& up (& (! gravity) (defined egg))) (= egg (moveUpNoCollision (prev egg))))
-  (on (& down (& (! gravity) (defined egg))) (= egg (moveDownNoCollision (prev egg))))
+  (on (& left (& (! gravity) (defined "egg"))) (= egg (moveLeftNoCollision (prev egg))))
+  (on (& right (& (! gravity) (defined "egg"))) (= egg (moveRightNoCollision (prev egg))))
+  (on (& up (& (! gravity) (defined "egg"))) (= egg (moveUpNoCollision (prev egg))))
+  (on (& down (& (! gravity) (defined "egg"))) (= egg (moveDownNoCollision (prev egg))))
   
-  (on (& (clicked (prev button)) (defined egg)) 
+  (on (& (clicked (prev button)) (defined "egg")) 
     (let (= gravity (! (prev gravity)))
          (= height (.. (.. (prev egg) origin) y))
     true
     ))
   
-  (on (let 
-        (& (& (defined egg) (< height 11)) (== (.. (.. egg origin) y) 13))) 
+  (on (& (defined "egg") (< height 10)) 
     (let (= egg (removeObj egg)) 
          (= pieces (addObj (prev pieces) (map (--> obj (Piece (Position (.. (.. obj position) x) (+ 1 (.. (.. obj position) y))))) (renderValue (prev egg)))))
          true

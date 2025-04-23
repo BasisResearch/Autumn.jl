@@ -27,8 +27,8 @@
   (= calc_num_contained (fn (rocks balloon)
     (let (= rect_start (movePos (.. balloon origin) (Position -2 0)))
         (= rect_end (movePos (.. balloon origin) (Position 2 7)))
-        (= still_rocks (filter (--> obj (intersects obj (nextSolid obj))) rocks))
-        (= still_rocks_poss (map (--> obj (.. obj origin)) still_rocks))
+        ; (= still_rocks (filter (--> obj (intersects obj (nextSolid obj))) rocks))
+        (= still_rocks_poss (map (--> obj (.. obj origin)) rocks))
         (= num_contained (length (filter (--> pos (
         & (<= (.. pos x) (.. rect_end x))
           (& (<= (.. rect_start x) (.. pos x))
@@ -40,8 +40,15 @@
         num_contained))
   )
   
+  (= in_baloon (fn (pos balloon)
+    (intersectsPosPoss pos
+      (rect (movePos (.. (prev balloon) origin) (Position -2 6)) 
+            (movePos (.. (prev balloon) origin) (Position 2 8)))))
+  )
+
   (on (
   let (= num_contained (calc_num_contained rocks balloon))
+      (print num_contained)
       (>= num_contained 3))
       (let (= weight true)
             true
@@ -51,27 +58,23 @@
   (on (< (calc_num_contained rocks balloon) 3)
       (= weight false))
   
-  (on (prev weight) 
+  (on weight 
     (let 
         (= rocks (updateObj 
-                    (prev rocks) 
-                    (--> obj (if (| (! (intersects obj (nextSolid obj))) (isWithinBounds (moveDown (prev balloon)))) then (moveDown obj) else obj)) 
-                    (--> obj (intersectsPosPoss (.. obj origin) 
-              (rect (movePos (.. (prev balloon) origin) (Position -2 0)) 
-                    (movePos (.. (prev balloon) origin) (Position 2 7)))))))
-        (= balloon (if (! (isWithinBounds (moveDown (prev balloon)))) then (prev balloon) else (moveDown (prev balloon))))))
-
-  (on (! (prev weight)) 
-    (let 
-        (= rocks (updateObj 
-                    (prev rocks) 
-                    (--> obj (if (! (isWithinBounds (moveUp (prev balloon)))) then (nextSolid obj) else (moveUp obj))) 
-                    (--> obj (intersectsPosPoss (.. obj origin) 
-              (rect (movePos (.. (prev balloon) origin) (Position -2 0)) 
-                    (movePos (.. (prev balloon) origin) (Position 2 7)))))))
-        (= balloon (if (! (isWithinBounds (moveUp (prev balloon)))) then (prev balloon) else (moveUp (prev balloon))))))  
+                    rocks
+                    (--> obj (if  (isWithinBounds (moveDown balloon)) then (moveDown obj) else obj)) (--> obj (in_baloon (.. obj origin) balloon)) ))
+        (= balloon (if (! (isWithinBounds (moveDown balloon))) then  balloon else (moveDown balloon)))))
   
-  (on (& ((clicked)) (isFreePos click)) (= rocks (addObj (prev rocks) (Rock (Position (.. click x) (.. click y ))))))
+  (on (! weight) 
+    (let 
+        (= rocks (updateObj 
+                    (prev "rocks")
+                    (--> obj (if (! (isWithinBounds (moveUp  balloon))) then (nextSolid obj) else (if (intersects obj (nextSolid obj)) then (moveUp obj) else obj))) 
+                    (--> obj (in_baloon (.. obj origin)  balloon))))
+        (= balloon (if (! (isWithinBounds (moveUp balloon))) then  balloon else (moveUp balloon)))))  
+
+
+  (on (& ((clicked)) (& (isFreePos click) (in_baloon click balloon))) (= rocks (addObj (prev rocks) (Rock (Position (.. click x) (.. click y ))))))
 
   (on (clicked (prev rocks)) 
     (= rocks (removeObj 

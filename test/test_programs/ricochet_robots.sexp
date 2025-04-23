@@ -1,4 +1,5 @@
-(program (= GRID_SIZE 24)
+(program 
+(= GRID_SIZE 24)
   
   (object Robot (: color String) (: active Bool) (: dir String) (: moving Bool) (Cell 0 0 color))
   (object Wall (Cell 0 0 "grey"))
@@ -16,80 +17,65 @@
                         then (rect (Position 0 0) (Position length 1))
                         else (rect (Position 0 0) (Position 1 length)))))
   
-  (: possiblePos (List Position))
-  (= possiblePos (rect (Position 1 1) (Position (- GRID_SIZE 1) (- GRID_SIZE 1))))
-
-  (= robotPos (fn () (let 
-  (= pos (head (uniformChoice possiblePos 1)))
-  (= possiblePos (removeObj possiblePos pos))
-  pos
-  )))
-
-  (= wallPos (fn () (let 
-  (= pos (head (uniformChoice possiblePos 1)))
-  (= possiblePos (removeObj possiblePos pos))
-  pos
-  )))
-
-  (: robot1 Robot) 
-  (= robot1 (Robot "red" true "none" false ((robotPos)))) ; robot1 is active at first
-  
-  (: robot2 Robot) 
-  (= robot2 (Robot "blue" false "none" false ((robotPos))))
-  
-  (: robot3 Robot) 
-  (= robot3 (Robot "green" false "none" false ((robotPos))))
-  
-  (: robot4 Robot) 
-  (= robot4 (Robot "yellow" false "none" false ((robotPos))))
-
   ; Border walls
   (: borders Border) 
   (= borders (initnext 
           (Border (Position 0 0))
           (prev borders)))
   
-  ; Inner walls - Ricochet Robots style
+  ; Fixed pattern of inner walls
   (: innerWall1 InnerWall)
-  (= innerWall1 (InnerWall "horizontal" 4 ((wallPos))))
+  (= innerWall1 (initnext (InnerWall "horizontal" 4 (Position 4 4)) (prev innerWall1)))
   
   (: innerWall2 InnerWall)
-  (= innerWall2 (InnerWall "vertical" 5 ((wallPos))))
-  
+  (= innerWall2 (initnext (InnerWall "vertical" 5 (Position 8 8)) (prev innerWall2)))
+
   (: innerWall3 InnerWall)
-  (= innerWall3 (InnerWall "horizontal" 6 ((wallPos))))
+  (= innerWall3 (initnext (InnerWall "vertical" 4 (Position 5 5)) (prev innerWall3)))
   
   (: innerWall4 InnerWall)
-  (= innerWall4 (InnerWall "vertical" 3 ((wallPos))))
+  (= innerWall4 (initnext (InnerWall "vertical" 6 (Position 16 16)) (prev innerWall4)))
   
   (: innerWall5 InnerWall)
-  (= innerWall5 (InnerWall "horizontal" 5 ((wallPos))))
+  (= innerWall5 (initnext (InnerWall "horizontal" 5 (Position 5 18)) (prev innerWall5)))
   
   (: innerWall6 InnerWall)
-  (= innerWall6 (InnerWall "vertical" 4 ((wallPos))))
+  (= innerWall6 (initnext (InnerWall "vertical" 5 (Position 18 6)) (prev innerWall6)))
   
   (: innerWall7 InnerWall)
-  (= innerWall7 (InnerWall "horizontal" 3 ((wallPos))))
-  
+  (= innerWall7 (initnext (InnerWall "horizontal" 3 (Position 17 17)) (prev innerWall7)))
+
   (: innerWall8 InnerWall)
-  (= innerWall8 (InnerWall "vertical" 6 ((wallPos))))
+  (= innerWall8 (initnext (InnerWall "vertical" 4 (Position 4 13)) (prev innerWall8)))
   
   ; Center walls forming a 2x2 square in the middle
   (: centerWall (List Wall))
-  (= centerWall (list (Wall (Position 11 11)) (Wall (Position 12 11)) (Wall (Position 11 12)) (Wall (Position 12 12)) ))
+  (= centerWall (initnext (list (Wall (Position 11 11)) (Wall (Position 12 11)) (Wall (Position 11 12)) (Wall (Position 12 12)) ) (prev centerWall)))
   
   ; Quadrant divider walls
   (: quadWall1 InnerWall)
-  (= quadWall1 (InnerWall "horizontal" 5 ((wallPos))))
+  (= quadWall1 (initnext (InnerWall "horizontal" 5 (Position 2 12)) (prev quadWall1)))
 
   (: quadWall2 InnerWall)
-  (= quadWall2 (InnerWall "vertical" 4 ((wallPos))))
+  (= quadWall2 (initnext (InnerWall "vertical" 4 (Position 12 2)) (prev quadWall2)))
   
   (: quadWall3 InnerWall)
-  (= quadWall3 (InnerWall "horizontal" 4 ((wallPos))))
+  (= quadWall3 (initnext (InnerWall "horizontal" 8 (Position 14 12)) (prev quadWall3)))
   
   (: quadWall4 InnerWall)
-  (= quadWall4 (InnerWall "vertical" 3 ((wallPos))))
+  (= quadWall4 (initnext (InnerWall "vertical" 6 (Position 12 17)) (prev quadWall4)))
+
+  (: robot1 Robot) 
+  (= robot1 (initnext (Robot "red" true "none" false  (Position 2 1)) (prev robot1)))
+  
+  (: robot2 Robot) 
+  (= robot2 (initnext (Robot "blue" false "none" false (Position 7 3)) (prev robot2)))
+  
+  (: robot3 Robot) 
+  (= robot3 (initnext (Robot "green" false "none" false (Position 6 13)) (prev robot3)))
+  
+  (: robot4 Robot) 
+  (= robot4 (initnext (Robot "yellow" false "none" false (Position 18 18)) (prev robot4)))
   
   ; Robot selection handlers
   (on (clicked robot1) 

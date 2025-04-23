@@ -21,7 +21,7 @@
   (= sun (initnext (Sun false (Position 0 0)) (prev sun)))
   
   (: water (List Water))
-  (= water (initnext (list) (filter (--> o3 (isWithinBounds o3)) (map (--> o (moveDown o)) (prev water))) ))
+  (= water (initnext (list) (filter isWithinBounds (map (--> o (moveDown o)) (prev water))) ))
   
   (: cloud Cloud)
   (= cloud (initnext (Cloud (Position 13 0)) (prev cloud)))
@@ -35,7 +35,7 @@
   (on (intersects (map (--> obj (moveDown obj)) (prev water) ) (prev leaves))
     (= water (filter (--> obj (!(intersects (moveDown obj) (prev leaves)))) water) ) )
   
-  (on (and (intersects (map (--> o2 (moveDown o2)) (prev water)) (filter (--> obj (== (.. obj color) "green")) (prev leaves))) (! (intersects (prev sun) (prev cloud))))
+  (on (and (intersects (map moveDown (prev water)) (filter (--> obj (== (.. obj color) "green")) (prev leaves))) (! (intersects (prev sun) (prev cloud))))
     (= leaves (addObj (prev leaves) (map (--> obj (Leaf (if (== (.. (.. (moveUp obj) origin) y) 12) then "mediumpurple" else "green") (.. (moveUp obj) origin))) (filter (--> obj (intersects (moveUp obj) (prev water))) (prev leaves))))))
     
   (on left (= cloud (moveLeft (prev cloud))))

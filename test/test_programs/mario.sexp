@@ -27,8 +27,8 @@
   (: enemyLives Number)
   (= enemyLives (initnext 1 (prev enemyLives)))
   
-  (on (& (defined enemy) ( == (.. (.. (prev enemy) origin) x) 1)) (= enemy (moveRight (updateObj (prev enemy) "movingLeft" false))))
-  (on (& (defined enemy) (== (.. (.. (prev enemy) origin) x) 14)) (= enemy (moveLeft (updateObj (prev enemy) "movingLeft" true))))
+  (on (& (defined "enemy") ( == (.. (.. (prev enemy) origin) x) 1)) (= enemy (moveRight (updateObj (prev enemy) "movingLeft" false))))
+  (on (& (defined "enemy") (== (.. (.. (prev enemy) origin) x) 14)) (= enemy (moveLeft (updateObj (prev enemy) "movingLeft" true))))
   
   (on left (= mario (if (intersects (moveLeft (prev mario)) (prev coins)) then (moveLeft (prev mario)) else (moveLeftNoCollision (prev mario)))))
   (on right (= mario (if (intersects (moveRight (prev mario)) (prev coins)) then (moveRight (prev mario)) else (moveRightNoCollision (prev mario)))))
@@ -36,15 +36,15 @@
   
   (on (intersects (prev mario) (prev coins)) 
     (let (= coins (removeObj (prev coins) (--> (obj) (intersects obj (prev mario))))) 
-         (= mario (moveDownNoCollision (updateObj (prev mario) "bullets" (+ (.. (prev mario) bullets) 1))))) )
+          (= mario (moveDownNoCollision (updateObj (prev mario) "bullets" (+ (.. (prev mario) bullets) 1))))) )
   
   (on (& ((clicked)) (> (.. (prev mario) bullets) 0)) 
     (let (= bullets (addObj (prev bullets) (Bullet (.. (prev mario) origin)))) 
-         (= mario (moveDownNoCollision (updateObj (prev mario) "bullets" (- (.. (prev mario) bullets) 1))))
-         true
-         ))
+          (= mario (moveDownNoCollision (updateObj (prev mario) "bullets" (- (.. (prev mario) bullets) 1))))
+          true
+          ))
   
-  (on (& (defined enemy) (intersects (prev enemy) (prev bullets)))
+  (on (& (defined "enemy") (intersects (prev enemy) (prev bullets)))
     (let (= bullets (removeObj (prev bullets) (--> obj (intersects obj (prev enemy))))) 
           (= enemy (if (== (prev enemyLives) 1) then (removeObj (prev enemy)) else (if (.. (prev enemy) movingLeft) then (moveLeft (prev enemy)) else (moveRight (prev enemy))) ))
           (= enemyLives (- (prev enemyLives) 1)))

@@ -7,7 +7,7 @@
     (= particles (initnext (list) (prev "particles")))
     
     (: currColor String)
-    (= currColor (initnext "red" (prev "currColor")))
+    (= currColor (initnext "red" (prev currColor)))
     
     (on clicked (= particles (addObj (prev "particles") (Particle currColor (Position (.. click x) (.. click y))))))
     (on (and ((up)) (== (prev "currColor") "red")) (= currColor "gold"))

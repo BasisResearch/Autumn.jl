@@ -15,8 +15,18 @@
   (on down (= mobileMagnet (moveNoCollision (prev "mobileMagnet") 0 1)))
   (on (adjacentElem (posPole mobileMagnet) (posPole fixedMagnet) 1) (= mobileMagnet (prev "mobileMagnet")))
   (on (adjacentElem (negPole mobileMagnet) (negPole fixedMagnet) 1) (= mobileMagnet (prev "mobileMagnet")))
-  (on (in (deltaElem (posPole mobileMagnet) (negPole fixedMagnet)) attractVectors) (= mobileMagnet (move mobileMagnet (unitVector (deltaElem (posPole mobileMagnet) (negPole fixedMagnet))))))
-  (on (in (deltaElem (negPole mobileMagnet) (posPole fixedMagnet)) attractVectors) (= mobileMagnet (move mobileMagnet (unitVector (deltaElem (negPole mobileMagnet) (posPole fixedMagnet))))))
+  (on (in (deltaElem (posPole mobileMagnet) (negPole fixedMagnet)) attractVectors) (
+    let
+    (= mPos (posPole mobileMagnet))
+    (= fNeg (negPole fixedMagnet))
+    (= dvec (deltaElem mPos fNeg))
+    (= mobileMagnet (move mobileMagnet (unitVectorSinglePos dvec))))
+  )
+  (on (in (deltaElem (negPole mobileMagnet) (posPole fixedMagnet)) attractVectors) (
+    let
+    (print "Here2")
+    (= mobileMagnet (move mobileMagnet (unitVectorSinglePos (deltaElem (negPole mobileMagnet) (posPole fixedMagnet))))))
+  )
     
   (= posPole (--> (magnet) (head (renderValue magnet))))  
   (= negPole (--> (magnet) (tail (renderValue magnet))))  

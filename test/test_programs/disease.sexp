@@ -12,7 +12,7 @@
 (on (any (--> obj (! (.. obj health))) (adjacentObjs activeParticle 1)) (= activeParticle (updateObj activeParticle "health" false)))
 (on (clicked (prev inactiveParticles)) (let 
         (= inactiveParticles (addObj (filter (--> obj (! (clicked obj))) (prev inactiveParticles)) activeParticle))
-        (= activeParticle (objClicked (head (prev inactiveParticles))))
+        (= activeParticle (head (objClicked (prev inactiveParticles))))
         true
         ))
 (on left (= activeParticle (move (prev activeParticle) (Position -1 0))))

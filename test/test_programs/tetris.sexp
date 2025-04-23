@@ -10,16 +10,16 @@
   (: activeTetris Tetris)
   (= activeTetris (initnext (Tetris (Position 0 0) (Position 0 1) (Position 0 2) (Position 1 2) "blue"
                                     (uniformChoice (list (Position 4 0) (Position 7 0) (Position 10 0))))
-                            (nextTetris activeTetris)))
+                            (nextTetris (activeTetris))))
   
-  (on left (= activeTetris (moveLeftNoCollision activeTetris)))
-  (on right (= activeTetris (moveRightNoCollision activeTetris)))
-  (on up (= activeTetris (rotateNoCollision activeTetris)))
-  (on down (= activeTetris (rotateNoCollision (rotateNoCollision (rotateNoCollision activeTetris)))))
+  (on left (= activeTetris (moveLeftNoCollision (activeTetris))))
+  (on right (= activeTetris (moveRightNoCollision (activeTetris))))
+  (on up (= activeTetris (rotateNoCollision (activeTetris))))
+  (on down (= activeTetris (rotateNoCollision (rotateNoCollision (rotateNoCollision (activeTetris))))))
   
   (= nextTetris (--> (tetris)
                     (if (
-                    let (print "DEBUG nextTetris")
+                    let (print ("DEBUG nextTetris"))
                         (print (isFreeRangeExceptObj 0 16 tetris))
                         (print (== (.. (nextSolid tetris) origin) (.. tetris origin)))
                         (isFreeRangeExceptObj 0 16 tetris)

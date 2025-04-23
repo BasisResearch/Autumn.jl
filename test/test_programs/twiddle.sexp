@@ -1,88 +1,92 @@
 (program
   (= GRID_SIZE 3)
   (object Twiddle (: color String) (Cell 0 0 color))
-  
-  (: possiblePos (List Position))
-  (= possiblePos (rect (Position 0 0) (Position GRID_SIZE GRID_SIZE)))
 
-  (= twiddlePos (fn () (let 
-    (= pos (head (uniformChoice possiblePos 1)))
-    (print pos)
-    (= possiblePos (removeObj possiblePos pos))
-    pos))
-   )
+  (= rotate_clockwise (fn (ts c) (let 
+    (= pos1 (if (== c 1) then (Position 0 0)
+    else (if (== c 2) then (Position 1 0)
+    else (if (== c 3) then (Position 0 1)
+    else (Position 1 1)))))
+
+    (= pos2 (if (== c 1) then (Position 1 0)
+    else (if (== c 2) then (Position 2 0)
+    else (if (== c 3) then (Position 1 1)
+    else (Position 2 1)))))
+
+    (= pos3 (if (== c 1) then (Position 1 1)
+    else (if (== c 2) then (Position 2 1)
+    else (if (== c 3) then (Position 1 2)
+    else (Position 2 2)))))
+
+    (= pos4 (if (== c 1) then (Position 0 1)
+    else (if (== c 2) then (Position 1 1)
+    else (if (== c 3) then (Position 0 2)
+    else (Position 1 2)))))
+
+    (= t1 (head (filter (--> o (== (.. o origin) pos1)) ts)))
+    (= t2 (head (filter (--> o (== (.. o origin) pos2)) ts)))
+    (= t3 (head (filter (--> o (== (.. o origin) pos3)) ts)))
+    (= t4 (head (filter (--> o (== (.. o origin) pos4)) ts)))
+
+    (= ts (updateObj ts (--> t (moveRight t)) (--> t (== t t1))))
+    (= ts (updateObj ts (--> t (moveDown t)) (--> t (== t t2))))
+    (= ts (updateObj ts (--> t (moveLeft t)) (--> t (== t t3))))
+    (= ts (updateObj ts (--> t (moveUp t)) (--> t (== t t4))))
+    ts
+  )))
+
+  (= shuffle_twiddles (fn (ts) (let
+    (= num_shuffles (uniformChoice (list 5 6 7 8 9)))
+    (print num_shuffles)
+    (= cs (uniformChoice (list 1 2 3 4) num_shuffles))
+    (print cs)
+    (= ts (head (map (--> c (rotate_clockwise ts c)) cs)))
+    ts
+  )))
+  
   (: twiddles (List Twiddle))
-  (= twiddles (initnext (list (Twiddle "red" ((twiddlePos)))
-  (Twiddle "green" ((twiddlePos)))
-  (Twiddle "blue" ((twiddlePos)))
-  (Twiddle "yellow" ((twiddlePos)))
-  (Twiddle "cyan" ((twiddlePos)))
-  (Twiddle "orange" ((twiddlePos)))
-  (Twiddle "magenta" ((twiddlePos)))
-  (Twiddle "brown" ((twiddlePos)))
-  (Twiddle "gray" ((twiddlePos)))
-  ) (prev twiddles)))
+  (= twiddles (initnext (shuffle_twiddles (list (Twiddle "pink" (Position 0 0))
+    (Twiddle "mediumpurple" (Position 0 1))
+    (Twiddle "skyblue" (Position 1 0))
+    (Twiddle "gold" (Position 1 1))
+    (Twiddle "orangered" (Position 1 2))
+    (Twiddle "lightcyan" (Position 2 0))
+    (Twiddle "lightgreen" (Position 2 1))
+    (Twiddle "magenta" (Position 2 2))
+    (Twiddle "darkgray" (Position 0 2))
+  )) (prev twiddles)))
 
   (: currentset Number)
   (= currentset (initnext 0 (prev currentset)))
 
   (on clicked
-    (= currentset (
-        if (in (Position (.. click x) (.. click y)) (list (Position 0 0) (Position 0 1) (Position 1 1)))
+    (= currentset (if (in (Position (.. click x) (.. click y)) (list (Position 0 0) (Position 0 1) (Position 1 1)))
         then 1
         else (if (in (Position (.. click x) (.. click y)) (list (Position 1 0) (Position 2 0)))
         then 2
         else (if (in (Position (.. click x) (.. click y)) (list (Position 0 2) (Position 1 2)))
         then 3
         else 4
-        ))
-    )))
-
-    (on (== currentset 1) (let
-        (= t1 (head (filter (--> o (== (.. o origin) (Position 0 0))) twiddles)))
-        (= t2 (head (filter (--> o (== (.. o origin) (Position 1 0))) twiddles)))
-        (= t3 (head (filter (--> o (== (.. o origin) (Position 1 1))) twiddles)))
-        (= t4 (head (filter (--> o (== (.. o origin) (Position 0 1))) twiddles)))
-        (= twiddles (updateObj twiddles (--> t (moveRight t)) (--> t (== t t1))))
-        (= twiddles (updateObj twiddles (--> t (moveDown t)) (--> t (== t t2))))
-        (= twiddles (updateObj twiddles (--> t (moveLeft t)) (--> t (== t t3))))
-        (= twiddles (updateObj twiddles (--> t (moveUp t)) (--> t (== t t4))))
-        (= currentset 0)
-    ))
-
-    (on (== currentset 2) (let
-        (= t1 (head (filter (--> o (== (.. o origin) (Position 1 0))) twiddles)))
-        (= t2 (head (filter (--> o (== (.. o origin) (Position 2 0))) twiddles)))
-        (= t3 (head (filter (--> o (== (.. o origin) (Position 2 1))) twiddles)))
-        (= t4 (head (filter (--> o (== (.. o origin) (Position 1 1))) twiddles)))
-        (= twiddles (updateObj twiddles (--> t (moveRight t)) (--> t (== t t1))))
-        (= twiddles (updateObj twiddles (--> t (moveDown t)) (--> t (== t t2))))
-        (= twiddles (updateObj twiddles (--> t (moveLeft t)) (--> t (== t t3))))
-        (= twiddles (updateObj twiddles (--> t (moveUp t)) (--> t (== t t4))))
-        (= currentset 0)
-    ))
-
-    (on (== currentset 3) (let
-        (= t1 (head (filter (--> o (== (.. o origin) (Position 0 1))) twiddles)))
-        (= t2 (head (filter (--> o (== (.. o origin) (Position 1 1))) twiddles)))
-        (= t3 (head (filter (--> o (== (.. o origin) (Position 1 2))) twiddles)))
-        (= t4 (head (filter (--> o (== (.. o origin) (Position 0 2))) twiddles)))
-        (= twiddles (updateObj twiddles (--> t (moveRight t)) (--> t (== t t1))))
-        (= twiddles (updateObj twiddles (--> t (moveDown t)) (--> t (== t t2))))
-        (= twiddles (updateObj twiddles (--> t (moveLeft t)) (--> t (== t t3))))
-        (= twiddles (updateObj twiddles (--> t (moveUp t)) (--> t (== t t4))))
-        (= currentset 0)
-    ))
-
-    (on (== currentset 4) (let
-        (= t1 (head (filter (--> o (== (.. o origin) (Position 1 1))) twiddles)))
-        (= t2 (head (filter (--> o (== (.. o origin) (Position 2 1))) twiddles)))
-        (= t3 (head (filter (--> o (== (.. o origin) (Position 2 2))) twiddles)))
-        (= t4 (head (filter (--> o (== (.. o origin) (Position 1 2))) twiddles)))
-        (= twiddles (updateObj twiddles (--> t (moveRight t)) (--> t (== t t1))))
-        (= twiddles (updateObj twiddles (--> t (moveDown t)) (--> t (== t t2))))
-        (= twiddles (updateObj twiddles (--> t (moveLeft t)) (--> t (== t t3))))
-        (= twiddles (updateObj twiddles (--> t (moveUp t)) (--> t (== t t4))))
-        (= currentset 0)
-    ))
+    ))))
+  )
+  
+  (on (== currentset 1) (let 
+    (= twiddles (rotate_clockwise twiddles 1))
+    (= currentset 0)
+  ))
+  
+  (on (== currentset 2) (let 
+    (= twiddles (rotate_clockwise twiddles 2))
+    (= currentset 0)
+  ))
+  
+  (on (== currentset 3) (let 
+    (= twiddles (rotate_clockwise twiddles 3))
+    (= currentset 0)
+  ))
+  
+  (on (== currentset 4) (let 
+    (= twiddles (rotate_clockwise twiddles 4))
+    (= currentset 0)
+  ))
 )

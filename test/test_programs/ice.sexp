@@ -17,7 +17,7 @@
     (= cloud (initnext (Cloud (Position 4 0)) (prev cloud)))
     
     (: water (List Water))
-    (= water (initnext (list) (updateObj (prev water) (--> obj (nextWater obj)))))
+    (= water (initnext (list) (updateObj (prev water) nextWater)))
     
     (on left (= cloud (nextCloud cloud (Position -1 0))))
     (on right (= cloud (nextCloud cloud (Position 1 0))))

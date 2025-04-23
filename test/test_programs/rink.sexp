@@ -2,7 +2,7 @@
   (= GRID_SIZE 28)
   (= background "black")
   
-  (object Rink (map (--> pos (Cell (.. pos x) (.. pos y) "lightblue")) (rect (Position 0 0) (Position 21 21))))
+  (object Rink (map (--> pos (Cell (.. pos x) (.. pos y) "lightblue")) (rect (Position 0 0) (Position 22 22))))
   (object Skater (Cell 0 0 "red"))
     
   (: rink Rink)
@@ -13,11 +13,14 @@
   
   (: slide String)
   (= slide (initnext "none" (prev "slide")))
+
+  (: prevSlide String)
+  (= prevSlide (initnext "none" (prev "prevSlide")))
   
-  (on left (= skater (moveLeft skater)))
-  (on right (= skater (moveRight skater)))
-  (on up (= skater (moveUp skater)))
-  (on down (= skater (moveDown skater)))
+  (on left (let (= prevSlide "left") (= skater (moveLeft skater))))
+  (on right (let (= prevSlide "right") (= skater (moveRight skater))))
+  (on up (let (= prevSlide "up") (= skater (moveUp skater))))
+  (on down (let (= prevSlide "down") (= skater (moveDown skater))))
     
   (on (& left (! (in slide (list "none" "right")))) (= slide "left"))
   (on (& right (! (in slide (list "none" "left")))) (= slide "right"))
@@ -34,5 +37,5 @@
 
    
   (on (& (! (intersects (prev skater) rink)) (intersects skater rink)) 
-    (= slide (if left then "left" else (if right then "right" else (if up then "up" else "down")))))    
+    (= slide prevSlide))
 )

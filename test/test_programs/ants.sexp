@@ -12,8 +12,8 @@
   
 
   (on true (= foods (filter (--> obj (! (intersects obj (prev ants)))) (prev foods))))
-  
   (on true (= ants (updateObj (prev ants) (--> obj (move obj (unitVector obj (closest obj foods)))))))
+
   (on clicked (= foods (addObj foods (map (--> pos (Food pos)) (randomPositions GRID_SIZE 2)))))
 
 )

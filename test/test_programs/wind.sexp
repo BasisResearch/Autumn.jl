@@ -3,9 +3,9 @@
   
   (object Water (Cell 0 0 "lightblue"))
   (: water (List Water))
-  (= water (initnext (list) (filter (--> x (isWithinBounds x)) (prev water))))
+  (= water (initnext (list) (filter isWithinBounds (prev water))))
 
-  (object Cloud (map (--> pos (Cell (.. pos x) (.. pos y) "gray")) (rect (Position 0 0) (Position 16 1))))
+  (object Cloud (map (--> pos (Cell (.. pos x) (.. pos y) "gray")) (rect (Position 0 0) (Position 17 2))))
   (: cloud Cloud)
   (= cloud (initnext (Cloud (Position 0 0)) (prev cloud)))
   

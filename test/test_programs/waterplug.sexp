@@ -30,9 +30,9 @@
     
     (on true (= waterList (updateObj (prev "waterList") nextLiquid)))
 
-    (on (& ((clicked)) (and (isFreePos click) (== currentParticle "vessel"))) (= vessels (addObj vessels (Vessel (Position (.. click x) (.. click y))))))
+    (on (and ((clicked)) (and (isFreePos click) (== currentParticle "vessel"))) (= vessels (addObj vessels (Vessel (Position (.. click x) (.. click y))))))
 
-    (on (& ((clicked)) (and (isFreePos click) (== currentParticle "plug"))) (= plugs (addObj plugs (Plug (Position (.. click x) (.. click y))))))
+    (on (and ((clicked)) (and (isFreePos click) (== currentParticle "plug"))) (= plugs (addObj plugs (Plug (Position (.. click x) (.. click y))))))
 
     (on (and ((clicked)) (and (isFreePos click) (== currentParticle "water"))) (= waterList (addObj waterList (Water (Position (.. click x) (.. click y))))))
 
